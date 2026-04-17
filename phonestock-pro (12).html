@@ -1,0 +1,3548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhoneStock Pro</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<style>
+:root {
+  --primary: #185FA5;
+  --primary-light: #2170b8;
+  --primary-dark: #114a82;
+  --success: #3B6D11;
+  --success-light: #4a8a16;
+  --warning: #854F0B;
+  --warning-light: #a0640f;
+  --danger: #A32D2D;
+  --danger-light: #bf3636;
+  --bg: #f4f6f9;
+  --bg-card: #ffffff;
+  --bg-input: #ffffff;
+  --text: #1a1a2e;
+  --text-secondary: #555770;
+  --text-muted: #8889a0;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+  --radius: 10px;
+  --header-bg: #185FA5;
+  --header-text: #ffffff;
+  --sidebar-bg: #ffffff;
+  --sidebar-hover: #f0f4f8;
+  --sidebar-active: #e8f0fe;
+  --badge-bg: #e8f0fe;
+  --badge-text: #185FA5;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1117;
+    --bg-card: #1a1c25;
+    --bg-input: #22242e;
+    --text: #e4e4ec;
+    --text-secondary: #a0a1b2;
+    --text-muted: #6b6c82;
+    --border: rgba(255,255,255,0.08);
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,0.4);
+    --header-bg: #141620;
+    --header-text: #e4e4ec;
+    --sidebar-bg: #1a1c25;
+    --sidebar-hover: #22242e;
+    --sidebar-active: #1e2a3a;
+    --badge-bg: #1e2a3a;
+    --badge-text: #6aadff;
+  }
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* HEADER */
+.header {
+  background: var(--header-bg);
+  color: var(--header-text);
+  padding: 0 20px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+.header-logo {
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-logo svg { width: 24px; height: 24px; }
+
+.header-store {
+  font-size: 13px;
+  opacity: 0.85;
+  background: rgba(255,255,255,0.15);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.header-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--header-text);
+  font-size: 22px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* LAYOUT */
+.layout {
+  display: flex;
+  padding-top: 54px;
+  min-height: 100vh;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: 220px;
+  background: var(--sidebar-bg);
+  border-right: 0.5px solid var(--border);
+  position: fixed;
+  top: 54px;
+  bottom: 0;
+  left: 0;
+  overflow-y: auto;
+  z-index: 90;
+  transition: transform 0.25s ease;
+}
+
+.sidebar-nav { padding: 10px 8px; }
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+}
+
+.nav-item:hover { background: var(--sidebar-hover); color: var(--text); }
+.nav-item.active { background: var(--sidebar-active); color: var(--primary); font-weight: 600; }
+.nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+/* MAIN */
+.main {
+  flex: 1;
+  margin-left: 220px;
+  padding: 24px;
+  max-width: 1200px;
+}
+
+/* CARDS */
+.card {
+  background: var(--bg-card);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* METRIC CARDS */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.metric-card {
+  background: var(--bg-card);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.metric-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.metric-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.metric-value.green { color: var(--success); }
+.metric-value.blue { color: var(--primary); }
+.metric-value.amber { color: var(--warning); }
+.metric-value.red { color: var(--danger); }
+
+/* FORMS */
+.form-group { margin-bottom: 14px; }
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 5px;
+}
+
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 0.5px solid var(--border);
+  border-radius: 7px;
+  font-size: 14px;
+  background: var(--bg-input);
+  color: var(--text);
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(24,95,165,0.12);
+}
+
+.form-group textarea { resize: vertical; min-height: 60px; }
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+/* BUTTONS */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 7px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-light); }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: var(--success-light); }
+.btn-warning { background: var(--warning); color: #fff; }
+.btn-warning:hover { background: var(--warning-light); }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { background: var(--danger-light); }
+.btn-outline {
+  background: transparent;
+  border: 0.5px solid var(--border);
+  color: var(--text-secondary);
+}
+.btn-outline:hover { background: var(--sidebar-hover); }
+.btn-sm { padding: 6px 12px; font-size: 13px; }
+.btn-block { width: 100%; }
+
+/* TABLES */
+.table-wrap { overflow-x: auto; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+th {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+td {
+  padding: 10px 12px;
+  border-bottom: 0.5px solid var(--border);
+  white-space: nowrap;
+}
+
+tr:hover { background: var(--sidebar-hover); }
+
+/* BADGES */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge-available { background: #e8f5e9; color: #2e7d32; }
+.badge-sold { background: #fce4ec; color: #c62828; }
+.badge-transferred { background: #e3f2fd; color: #1565c0; }
+.badge-active { background: #e8f5e9; color: #2e7d32; }
+.badge-expired { background: #fce4ec; color: #c62828; }
+.badge-found { background: #e8f5e9; color: #2e7d32; }
+.badge-missing { background: #fff3e0; color: #e65100; }
+
+@media (prefers-color-scheme: dark) {
+  .badge-available { background: #1b3a1f; color: #66bb6a; }
+  .badge-sold { background: #3a1a1f; color: #ef5350; }
+  .badge-transferred { background: #1a2a3a; color: #42a5f5; }
+  .badge-active { background: #1b3a1f; color: #66bb6a; }
+  .badge-expired { background: #3a1a1f; color: #ef5350; }
+  .badge-found { background: #1b3a1f; color: #66bb6a; }
+  .badge-missing { background: #3a2a1a; color: #ffa726; }
+}
+
+/* SEARCH */
+.search-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.search-bar input {
+  flex: 1;
+  padding: 9px 14px;
+  border: 0.5px solid var(--border);
+  border-radius: 7px;
+  font-size: 14px;
+  background: var(--bg-input);
+  color: var(--text);
+  font-family: inherit;
+}
+
+.search-bar input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(24,95,165,0.12);
+}
+
+/* TABS */
+.tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.tab:hover { color: var(--text); }
+
+/* MODAL */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-overlay.show { display: flex; }
+
+.modal {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 24px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+/* TOAST */
+.toast-container {
+  position: fixed;
+  top: 64px;
+  right: 20px;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  padding: 12px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  animation: slideIn 0.3s ease;
+  box-shadow: var(--shadow-lg);
+}
+
+.toast-success { background: var(--success); }
+.toast-error { background: var(--danger); }
+.toast-info { background: var(--primary); }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* STORE SELECTOR */
+.store-selector-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.store-selector-card {
+  background: var(--bg-card);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+
+.store-selector-card h1 {
+  font-size: 22px;
+  margin-bottom: 6px;
+  color: var(--primary);
+}
+
+.store-selector-card p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+.store-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.store-btn {
+  padding: 12px;
+  border: 0.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-input);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.store-btn:hover {
+  background: var(--sidebar-active);
+  border-color: var(--primary);
+}
+
+/* PRINT LABEL */
+.print-area {
+  display: none;
+}
+
+@media print {
+  body * { display: none !important; }
+  .print-area { display: block !important; }
+  .print-area * { display: block !important; }
+  .label-card {
+    border: 1px solid #000;
+    padding: 10px;
+    text-align: center;
+    page-break-inside: avoid;
+    width: 280px;
+    margin: 10px auto;
+  }
+  .label-card .label-price {
+    font-size: 28px;
+    font-weight: 800;
+    margin: 8px 0;
+  }
+  .label-card .label-model { font-size: 14px; margin-bottom: 4px; }
+  .label-card .label-specs { font-size: 11px; color: #666; }
+}
+
+/* EMPTY STATE */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+}
+
+.empty-state svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.4; }
+.empty-state p { font-size: 14px; }
+
+/* LOADING */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: var(--text-muted);
+  font-size: 14px;
+  gap: 8px;
+}
+
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .header-menu-btn { display: block; }
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); box-shadow: var(--shadow-lg); }
+  .main { margin-left: 0; padding: 16px; }
+  .form-row, .form-row-3 { grid-template-columns: 1fr; }
+  .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+  .header-store { display: none; }
+}
+
+/* PHYSICAL COUNT */
+.count-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 0.5px solid var(--border);
+}
+
+.count-row:last-child { border-bottom: none; }
+
+.count-info { flex: 1; }
+.count-info .count-model { font-weight: 600; font-size: 14px; }
+.count-info .count-imei { font-size: 12px; color: var(--text-muted); font-family: monospace; }
+
+.count-actions { display: flex; gap: 6px; }
+</style>
+</head>
+<body>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- PRINT AREA -->
+<div class="print-area" id="printArea"></div>
+
+<!-- STORE SELECTOR -->
+<div class="store-selector-overlay" id="storeSelector">
+  <div class="store-selector-card">
+    <h1>📱 PhoneStock Pro</h1>
+    <p id="storeSelectorMsg">Connecting to database...</p>
+    <div class="store-list" id="storeList">
+      <div class="loading"><div class="spinner"></div> Loading stores...</div>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="header" id="appHeader" style="display:none;">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <button class="header-menu-btn" onclick="toggleSidebar()">☰</button>
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+      PhoneStock Pro
+    </div>
+  </div>
+  <div class="header-store" id="headerStore"></div>
+</header>
+
+<!-- LAYOUT -->
+<div class="layout" id="appLayout" style="display:none;">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-item" data-page="inventory" onclick="navigate('inventory')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
+        Inventory
+      </button>
+      <button class="nav-item" data-page="addphone" onclick="navigate('addphone')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Add Phone
+      </button>
+      <button class="nav-item" data-page="sell" onclick="navigate('sell')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Sell Phone
+      </button>
+      <button class="nav-item" data-page="transfer" onclick="navigate('transfer')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        Transfer
+      </button>
+      <button class="nav-item" data-page="warranty" onclick="navigate('warranty')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Warranty
+      </button>
+      <button class="nav-item" data-page="count" onclick="navigate('count')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/></svg>
+        Physical Count
+      </button>
+      <button class="nav-item" data-page="labels" onclick="navigate('labels')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="1"/><line x1="9" y1="6" x2="15" y2="6"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="15" y2="14"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+        Labels
+      </button>
+      <button class="nav-item" data-page="staff" onclick="navigate('staff')" id="staffNavItem" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Staff
+      </button>
+      <div style="padding:10px 14px;margin-top:16px;border-top:0.5px solid var(--border);display:flex;flex-direction:column;gap:6px;">
+        <button class="btn btn-outline btn-sm btn-block" onclick="lockScreen()">🔒 Lock</button>
+        <button class="btn btn-outline btn-sm btn-block" onclick="changeStore()">Change Store</button>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main" id="mainContent"></main>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<script>
+// ─── SUPABASE CONFIG ───
+const SUPABASE_URL = 'https://xwfndnlzudjfgxspypdj.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh3Zm5kbmx6dWRqZmd4c3B5cGRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNTk0MjIsImV4cCI6MjA5MTkzNTQyMn0.lOHzal0fCSReXMDGdsA8xvTMrECqNXqxZ14dSf9iAGY';
+
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ─── STATE ───
+let currentStore = null;
+let allStores = [];
+let currentPage = 'dashboard';
+let currentStaff = null;
+let inactivityTimer = null;
+const ADMIN_PIN = '4593';
+const INACTIVITY_TIMEOUT = 2 * 60 * 60 * 1000; // 2 hours
+
+// ─── INIT ───
+async function init() {
+  try {
+    const { data: stores, error } = await db.from('stores').select('*').order('name');
+    if (error) {
+      document.getElementById('storeSelectorMsg').textContent = 'Select your store location to get started';
+      document.getElementById('storeList').innerHTML = '<p style="color:var(--danger);font-size:14px;">❌ Database connection failed:<br>' + error.message + '<br><br>Check that you ran the SQL setup in Supabase and that RLS policies are enabled.</p>';
+      return;
+    }
+    if (!stores || stores.length === 0) {
+      document.getElementById('storeSelectorMsg').textContent = 'Select your store location to get started';
+      document.getElementById('storeList').innerHTML = '<p style="color:var(--warning);font-size:14px;">⚠️ No stores found in database.<br><br>Run the SQL setup script in Supabase SQL Editor first.</p>';
+      return;
+    }
+    allStores = stores;
+
+    const savedStoreId = localStorage.getItem('phonestock_store_id');
+    if (savedStoreId) {
+      currentStore = allStores.find(s => s.id === savedStoreId);
+    }
+
+    if (currentStore) {
+      // Check for saved staff session
+      const savedStaffId = localStorage.getItem('phonestock_staff_id');
+      if (savedStaffId) {
+        const { data: staff } = await db.from('staff').select('*').eq('id', savedStaffId).single();
+        if (staff) {
+          // Verify still has access
+          const { data: access } = await db.from('staff_stores').select('*').eq('staff_id', staff.id).eq('store_id', currentStore.id);
+          if (access && access.length > 0) {
+            currentStaff = staff;
+            showApp();
+            return;
+          }
+        }
+      }
+      showPinScreen();
+    } else {
+      showStoreSelector();
+    }
+  } catch (err) {
+    document.getElementById('storeSelectorMsg').textContent = 'Connection Error';
+    document.getElementById('storeList').innerHTML = '<p style="color:var(--danger);font-size:14px;">❌ Could not connect to Supabase:<br>' + err.message + '<br><br>Make sure you have internet access.</p>';
+  }
+}
+
+// ─── STORE SELECTOR ───
+function showStoreSelector() {
+  document.getElementById('storeSelector').style.display = 'flex';
+  document.getElementById('appHeader').style.display = 'none';
+  document.getElementById('appLayout').style.display = 'none';
+  document.getElementById('storeSelectorMsg').textContent = 'Select your store location to get started';
+
+  const list = document.getElementById('storeList');
+  list.innerHTML = allStores.map(s => `
+    <button class="store-btn" onclick="selectStore('${s.id}')">${s.name}</button>
+  `).join('');
+}
+
+function selectStore(id) {
+  currentStore = allStores.find(s => s.id === id);
+  localStorage.setItem('phonestock_store_id', id);
+  showPinScreen();
+}
+
+function changeStore() {
+  localStorage.removeItem('phonestock_store_id');
+  localStorage.removeItem('phonestock_staff_id');
+  currentStore = null;
+  currentStaff = null;
+  showStoreSelector();
+}
+
+// ─── PIN SCREEN ───
+function showPinScreen() {
+  document.getElementById('storeSelector').style.display = 'flex';
+  document.getElementById('appHeader').style.display = 'none';
+  document.getElementById('appLayout').style.display = 'none';
+
+  document.getElementById('storeSelectorMsg').textContent = currentStore.name;
+  document.getElementById('storeList').innerHTML = `
+    <div style="text-align:center;">
+      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">Enter your 4-digit PIN</p>
+      <div style="display:flex;justify-content:center;gap:8px;margin-bottom:16px;">
+        <input type="password" id="pinInput1" maxlength="1" style="width:48px;height:56px;text-align:center;font-size:24px;font-weight:700;border:1.5px solid var(--border);border-radius:10px;background:var(--bg-input);color:var(--text);font-family:inherit;" oninput="pinNext(1)" onkeydown="pinKeydown(event,1)">
+        <input type="password" id="pinInput2" maxlength="1" style="width:48px;height:56px;text-align:center;font-size:24px;font-weight:700;border:1.5px solid var(--border);border-radius:10px;background:var(--bg-input);color:var(--text);font-family:inherit;" oninput="pinNext(2)" onkeydown="pinKeydown(event,2)">
+        <input type="password" id="pinInput3" maxlength="1" style="width:48px;height:56px;text-align:center;font-size:24px;font-weight:700;border:1.5px solid var(--border);border-radius:10px;background:var(--bg-input);color:var(--text);font-family:inherit;" oninput="pinNext(3)" onkeydown="pinKeydown(event,3)">
+        <input type="password" id="pinInput4" maxlength="1" style="width:48px;height:56px;text-align:center;font-size:24px;font-weight:700;border:1.5px solid var(--border);border-radius:10px;background:var(--bg-input);color:var(--text);font-family:inherit;" oninput="pinNext(4)" onkeydown="pinKeydown(event,4)">
+      </div>
+      <div id="pinError" style="color:var(--danger);font-size:13px;margin-bottom:12px;min-height:20px;"></div>
+      <button class="btn btn-primary btn-block" onclick="verifyPin()">Unlock</button>
+      <button class="btn btn-outline btn-block btn-sm" style="margin-top:8px;" onclick="showStoreSelector()">← Change Store</button>
+    </div>
+  `;
+  setTimeout(() => document.getElementById('pinInput1')?.focus(), 100);
+}
+
+function pinNext(n) {
+  const input = document.getElementById('pinInput' + n);
+  if (input.value.length === 1 && n < 4) {
+    document.getElementById('pinInput' + (n + 1)).focus();
+  }
+  if (n === 4 && input.value.length === 1) {
+    verifyPin();
+  }
+}
+
+function pinKeydown(e, n) {
+  if (e.key === 'Backspace' && !e.target.value && n > 1) {
+    document.getElementById('pinInput' + (n - 1)).focus();
+  }
+}
+
+async function verifyPin() {
+  const pin = [1,2,3,4].map(n => document.getElementById('pinInput' + n).value).join('');
+  if (pin.length !== 4) {
+    document.getElementById('pinError').textContent = 'Enter all 4 digits';
+    return;
+  }
+
+  // Check staff with this PIN
+  const { data: staff } = await db.from('staff').select('*').eq('pin', pin);
+  if (!staff || staff.length === 0) {
+    document.getElementById('pinError').textContent = 'Invalid PIN';
+    [1,2,3,4].forEach(n => { document.getElementById('pinInput' + n).value = ''; });
+    document.getElementById('pinInput1').focus();
+    return;
+  }
+
+  const member = staff[0];
+
+  // Check if staff has access to this store
+  const { data: access } = await db.from('staff_stores').select('*').eq('staff_id', member.id).eq('store_id', currentStore.id);
+  if (!access || access.length === 0) {
+    document.getElementById('pinError').textContent = 'You don\'t have access to ' + currentStore.name;
+    [1,2,3,4].forEach(n => { document.getElementById('pinInput' + n).value = ''; });
+    document.getElementById('pinInput1').focus();
+    return;
+  }
+
+  currentStaff = member;
+  localStorage.setItem('phonestock_staff_id', member.id);
+  showApp();
+}
+
+function lockScreen() {
+  currentStaff = null;
+  localStorage.removeItem('phonestock_staff_id');
+  clearInactivityTimer();
+  showPinScreen();
+}
+
+// ─── INACTIVITY TIMER ───
+function resetInactivityTimer() {
+  clearTimeout(inactivityTimer);
+  inactivityTimer = setTimeout(() => {
+    if (currentStaff) {
+      toast('Session locked due to inactivity', 'info');
+      lockScreen();
+    }
+  }, INACTIVITY_TIMEOUT);
+}
+
+function clearInactivityTimer() {
+  clearTimeout(inactivityTimer);
+}
+
+function setupInactivityListeners() {
+  ['click', 'keydown', 'mousemove', 'touchstart'].forEach(evt => {
+    document.addEventListener(evt, resetInactivityTimer);
+  });
+  resetInactivityTimer();
+}
+
+function showApp() {
+  document.getElementById('storeSelector').style.display = 'none';
+  document.getElementById('appHeader').style.display = 'flex';
+  document.getElementById('appLayout').style.display = 'flex';
+  document.getElementById('headerStore').textContent = currentStore.name + (currentStaff ? ' • ' + currentStaff.name : '');
+  setupInactivityListeners();
+  navigate('dashboard');
+}
+
+// ─── NAVIGATION ───
+function navigate(page) {
+  // Staff page is admin-only
+  if (page === 'staff' && (!currentStaff || currentStaff.pin !== ADMIN_PIN)) {
+    toast('Admin access required', 'error');
+    return;
+  }
+
+  currentPage = page;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
+  closeSidebar();
+
+  // Show/hide staff nav item for admin
+  const staffNav = document.getElementById('staffNavItem');
+  if (staffNav) staffNav.style.display = (currentStaff && currentStaff.pin === ADMIN_PIN) ? 'flex' : 'none';
+
+  const pages = {
+    dashboard: renderDashboard,
+    inventory: renderInventory,
+    addphone: renderAddPhone,
+    sell: renderSell,
+    transfer: renderTransfer,
+    warranty: renderWarranty,
+    count: renderCount,
+    labels: renderLabels,
+    staff: renderStaffManagement
+  };
+
+  if (pages[page]) pages[page]();
+}
+
+// ─── SIDEBAR TOGGLE ───
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); }
+
+// ─── TOAST ───
+function toast(msg, type = 'success') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => { t.remove(); }, 3000);
+}
+
+// ─── MODAL ───
+function openModal(html) {
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+
+// ─── HELPERS ───
+function fmt(n) { return '$' + Number(n || 0).toFixed(2); }
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString() : '-'; }
+function loading() { return '<div class="loading"><div class="spinner"></div> Loading...</div>'; }
+
+function emptyState(msg) {
+  return `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg><p>${msg}</p></div>`;
+}
+
+// ─── DASHBOARD ───
+async function renderDashboard() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = loading();
+
+  const [phonesRes, salesRes] = await Promise.all([
+    db.from('phones').select('*').eq('store_id', currentStore.id),
+    db.from('sales').select('*').eq('store_id', currentStore.id).order('sale_date', { ascending: false })
+  ]);
+
+  const phones = phonesRes.data || [];
+  const sales = salesRes.data || [];
+
+  const available = phones.filter(p => p.status === 'available');
+  const sold = phones.filter(p => p.status === 'sold');
+  const revenue = sales.reduce((a, s) => a + Number(s.sale_price || 0), 0);
+
+  // Today's sales
+  const today = new Date().toDateString();
+  const todaySales = sales.filter(s => new Date(s.sale_date).toDateString() === today);
+  const todayRevenue = todaySales.reduce((a, s) => a + Number(s.sale_price || 0), 0);
+
+  // This month's sales
+  const now = new Date();
+  const monthSales = sales.filter(s => {
+    const d = new Date(s.sale_date);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+  const monthRevenue = monthSales.reduce((a, s) => a + Number(s.sale_price || 0), 0);
+
+  // Recent 5 sales
+  const recentSales = sales.slice(0, 5);
+
+  main.innerHTML = `
+    <h2 style="margin-bottom:6px;">Dashboard</h2>
+    <p style="color:var(--text-muted);font-size:14px;margin-bottom:20px;">📍 ${currentStore.name}</p>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Available Stock</div>
+        <div class="metric-value blue">${available.length}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Total Sold</div>
+        <div class="metric-value green">${sold.length}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Total Revenue</div>
+        <div class="metric-value green">${fmt(revenue)}</div>
+      </div>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Today's Sales</div>
+        <div class="metric-value blue">${todaySales.length}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Today's Revenue</div>
+        <div class="metric-value blue">${fmt(todayRevenue)}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">This Month Sales</div>
+        <div class="metric-value">${monthSales.length}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">This Month Revenue</div>
+        <div class="metric-value">${fmt(monthRevenue)}</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="card">
+        <div class="card-title">💰 Recent Sales</div>
+        ${recentSales.length ? `
+          <table>
+            <thead><tr><th>Phone</th><th>Price</th><th>Date</th></tr></thead>
+            <tbody>
+              ${recentSales.map(s => `
+                <tr>
+                  <td>${s.model}</td>
+                  <td>${fmt(s.sale_price)}</td>
+                  <td>${fmtDate(s.sale_date)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        ` : emptyState('No sales yet')}
+      </div>
+    </div>
+  `;
+}
+
+// ─── INVENTORY ───
+async function renderInventory() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = loading();
+
+  // Only fetch MY store's phones
+  const { data: phones } = await db.from('phones').select('*').eq('store_id', currentStore.id).order('added_date', { ascending: false });
+  const list = phones || [];
+
+  main.innerHTML = `
+    <h2 style="margin-bottom:16px;">Inventory — ${currentStore.name}</h2>
+    <div class="search-bar">
+      <input type="text" id="invSearch" placeholder="Search by IMEI, brand, model..." oninput="filterInventory()">
+      <select id="invFilter" onchange="filterInventory()" style="width:140px;padding:9px 12px;border:0.5px solid var(--border);border-radius:7px;background:var(--bg-input);color:var(--text);font-size:14px;">
+        <option value="all">All Status</option>
+        <option value="available">Available</option>
+        <option value="sold">Sold</option>
+        <option value="transferred">Transferred</option>
+      </select>
+    </div>
+    <div class="card">
+      <div id="invCount" style="font-size:13px;color:var(--text-muted);margin-bottom:10px;"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>IMEI</th><th>Brand</th><th>Model</th><th>Storage</th><th>Color</th><th>Condition</th><th>Retail</th><th>Status</th><th>Added</th></tr></thead>
+          <tbody id="invTableBody"></tbody>
+        </table>
+      </div>
+      <div id="invOtherStores"></div>
+    </div>
+    <div id="otherStoresResults"></div>
+  `;
+
+  window._invData = list;
+  filterInventory();
+}
+
+function invRow(p, showStore) {
+  const storeName = showStore ? allStores.find(s => s.id === p.store_id)?.name || '-' : null;
+  return `<tr onclick="showPhoneDetail('${p.id}')" style="cursor:pointer;">
+    <td style="font-family:monospace;font-size:12px;">${p.imei}</td>
+    <td>${p.brand}</td><td>${p.model}</td>
+    <td>${p.storage || '-'}</td><td>${p.color || '-'}</td>
+    <td>${p.condition || '-'}</td>
+    <td>${fmt(p.retail_price)}</td>
+    <td><span class="badge badge-${p.status}">${p.status}</span></td>
+    ${showStore ? `<td>${storeName}</td>` : ''}
+    <td>${fmtDate(p.added_date)}</td>
+  </tr>`;
+}
+
+function filterInventory() {
+  const q = document.getElementById('invSearch').value.toLowerCase();
+  const f = document.getElementById('invFilter').value;
+  const rows = (window._invData || []).filter(p => {
+    const matchSearch = !q || p.imei.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q) || p.model.toLowerCase().includes(q);
+    const matchFilter = f === 'all' || p.status === f;
+    return matchSearch && matchFilter;
+  });
+
+  document.getElementById('invCount').textContent = `Showing ${rows.length} phone${rows.length !== 1 ? 's' : ''}`;
+  document.getElementById('invTableBody').innerHTML = rows.length
+    ? rows.map(p => invRow(p, false)).join('')
+    : `<tr><td colspan="9">${emptyState('No matching phones at this store')}</td></tr>`;
+
+  // Show "Check Other Stores" button when searching and no/few results
+  const otherDiv = document.getElementById('invOtherStores');
+  if (q && q.length >= 2) {
+    otherDiv.innerHTML = `
+      <div style="text-align:center;padding:12px 0;border-top:0.5px solid var(--border);margin-top:12px;">
+        <button class="btn btn-outline btn-sm" onclick="checkOtherStores()">
+          🔍 Check other stores for "${document.getElementById('invSearch').value}"
+        </button>
+      </div>
+    `;
+  } else {
+    otherDiv.innerHTML = '';
+  }
+
+  // Clear previous other-stores results when search changes
+  document.getElementById('otherStoresResults').innerHTML = '';
+}
+
+async function checkOtherStores() {
+  const q = document.getElementById('invSearch').value.toLowerCase();
+  if (!q) return;
+
+  const resultsDiv = document.getElementById('otherStoresResults');
+  resultsDiv.innerHTML = `<div class="card" style="margin-top:16px;">${loading()}</div>`;
+
+  // Fetch phones from ALL other stores
+  const { data: phones } = await db.from('phones').select('*').neq('store_id', currentStore.id).eq('status', 'available').order('brand');
+  const matches = (phones || []).filter(p =>
+    p.imei.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q) || p.model.toLowerCase().includes(q)
+  );
+
+  if (matches.length === 0) {
+    resultsDiv.innerHTML = `
+      <div class="card" style="margin-top:16px;">
+        <div class="card-title">📍 Other Stores</div>
+        ${emptyState('Not found at any other store either')}
+      </div>
+    `;
+    return;
+  }
+
+  // Group by store
+  const byStore = {};
+  matches.forEach(p => {
+    const name = allStores.find(s => s.id === p.store_id)?.name || 'Unknown';
+    if (!byStore[name]) byStore[name] = [];
+    byStore[name].push(p);
+  });
+
+  resultsDiv.innerHTML = `
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">📍 Found at Other Stores (${matches.length} phone${matches.length !== 1 ? 's' : ''})</div>
+      ${Object.entries(byStore).map(([store, phones]) => `
+        <div style="margin-bottom:16px;">
+          <div style="font-weight:600;font-size:14px;margin-bottom:8px;color:var(--primary);">📌 ${store} — ${phones.length} available</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>IMEI</th><th>Brand</th><th>Model</th><th>Storage</th><th>Color</th><th>Condition</th><th>Retail</th></tr></thead>
+              <tbody>
+                ${phones.map(p => `
+                  <tr onclick="showPhoneDetail('${p.id}')" style="cursor:pointer;">
+                    <td style="font-family:monospace;font-size:12px;">${p.imei}</td>
+                    <td>${p.brand}</td><td>${p.model}</td>
+                    <td>${p.storage || '-'}</td><td>${p.color || '-'}</td>
+                    <td>${p.condition || '-'}</td>
+                    <td>${fmt(p.retail_price)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+async function showPhoneDetail(id) {
+  const { data: p } = await db.from('phones').select('*').eq('id', id).single();
+  if (!p) return;
+  const storeName = allStores.find(s => s.id === p.store_id)?.name || '-';
+  const isMyStore = p.store_id === currentStore.id;
+  openModal(`
+    <div class="modal-title">${p.brand} ${p.model}</div>
+    <table style="width:100%;">
+      <tr><td style="color:var(--text-muted);padding:6px 0;">IMEI</td><td style="padding:6px 0;font-family:monospace;">${p.imei}</td></tr>
+      <tr><td style="color:var(--text-muted);padding:6px 0;">Storage</td><td style="padding:6px 0;">${p.storage || '-'}</td></tr>
+      <tr><td style="color:var(--text-muted);padding:6px 0;">Color</td><td style="padding:6px 0;">${p.color || '-'}</td></tr>
+      <tr><td style="color:var(--text-muted);padding:6px 0;">Condition</td><td style="padding:6px 0;">${p.condition || '-'}</td></tr>
+      <tr><td style="color:var(--text-muted);padding:6px 0;">Cost</td><td style="padding:6px 0;">${fmt(p.cost)}</td></tr>
+      <tr><td style="color:var(--text-muted);padding:6px 0;">Retail Price</td><td style="padding:6px 0;">${fmt(p.retail_price)}</td></tr>
+      <tr><td style="color:var(--text-muted);padding:6px 0;">Status</td><td style="padding:6px 0;"><span class="badge badge-${p.status}">${p.status}</span></td></tr>
+      <tr><td style="color:var(--text-muted);padding:6px 0;">Store</td><td style="padding:6px 0;">${storeName}${isMyStore ? ' (My Store)' : ''}</td></tr>
+      <tr><td style="color:var(--text-muted);padding:6px 0;">Notes</td><td style="padding:6px 0;">${p.notes || '-'}</td></tr>
+      <tr><td style="color:var(--text-muted);padding:6px 0;">Added</td><td style="padding:6px 0;">${fmtDate(p.added_date)}</td></tr>
+    </table>
+    <div style="margin-top:16px;display:flex;gap:8px;">
+      <button class="btn btn-outline btn-sm" onclick="closeModal()">Close</button>
+    </div>
+  `);
+}
+
+// ─── ADD PHONE ───
+async function renderAddPhone() {
+  // Load suppliers
+  const { data: suppliers } = await db.from('suppliers').select('*').order('name');
+  window._suppliers = suppliers || [];
+
+  const main = document.getElementById('mainContent');
+  main.innerHTML = `
+    <h2 style="margin-bottom:16px;">Add Phone</h2>
+    <div class="tabs">
+      <button class="tab active" onclick="showAddTab('customer',this)">Bought from Customer</button>
+      <button class="tab" onclick="showAddTab('supplier',this)">Bought from Supplier</button>
+      <button class="tab" onclick="showAddTab('bulk',this)">CSV Import</button>
+    </div>
+
+    <div id="addCustomer">
+      <div class="card" style="max-width:600px;">
+        <div class="card-title">📱 Phone Details</div>
+        <div class="form-group">
+          <label>IMEI *</label>
+          <input type="text" id="addImei" placeholder="Enter IMEI number" oninput="validateImei()">
+          <small id="imeiHint" style="color:var(--text-muted);font-size:12px;"></small>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Brand *</label>
+            <select id="addBrand" onchange="onBrandChange()">
+              <option value="">Select brand</option>
+              <option>Apple</option><option>Samsung</option><option>Google</option><option>OnePlus</option>
+              <option>Motorola</option><option>Xiaomi</option><option>Huawei</option><option>LG</option>
+              <option>Sony</option><option>Nokia</option><option>Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Model *</label>
+            <div id="modelFieldWrap">
+              <input type="text" id="addModel" placeholder="e.g. iPhone 15 Pro Max">
+            </div>
+          </div>
+        </div>
+        <div class="form-row-3">
+          <div class="form-group">
+            <label>Storage</label>
+            <select id="addStorage">
+              <option value="">Select</option>
+              <option>32GB</option><option>64GB</option><option>128GB</option><option>256GB</option>
+              <option>512GB</option><option>1TB</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Color</label>
+            <input type="text" id="addColor" placeholder="e.g. Black">
+          </div>
+          <div class="form-group">
+            <label>Condition</label>
+            <select id="addCondition">
+              <option value="New with Box">New with Box</option>
+              <option value="Like New">Like New</option>
+              <option value="Good">Good</option>
+              <option value="Fair">Fair</option>
+              <option value="Refurbished">Refurbished</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Purchase Price ($) *</label>
+            <input type="number" id="addCost" step="0.01" placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label>Retail Price ($) *</label>
+            <input type="number" id="addRetail" step="0.01" placeholder="0.00">
+          </div>
+        </div>
+
+        <div style="border-top:0.5px solid var(--border);margin:16px 0;padding-top:16px;">
+          <div class="card-title">👤 Customer Details</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Customer Name *</label>
+              <input type="text" id="addCustName" placeholder="Full name">
+            </div>
+            <div class="form-group">
+              <label>Customer Phone *</label>
+              <input type="text" id="addCustPhone" placeholder="Phone number">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Payment Method *</label>
+            <select id="addCustPayment">
+              <option value="Cash">Cash</option>
+              <option value="e-Transfer">e-Transfer</option>
+              <option value="Store Credit">Store Credit</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="addNotes" placeholder="Any additional notes..."></textarea>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="addPhoneFromCustomer()">Add Phone to Inventory</button>
+      </div>
+    </div>
+
+    <div id="addSupplier" style="display:none;">
+      <div class="card" style="max-width:900px;">
+        <div class="card-title">🏭 Supplier Order</div>
+        <div class="form-row-3">
+          <div class="form-group">
+            <label>Supplier *</label>
+            <div style="display:flex;gap:6px;">
+              <select id="supplierId" style="flex:1;">
+                <option value="">Select supplier</option>
+                ${(window._suppliers || []).map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+              </select>
+              <button class="btn btn-outline btn-sm" onclick="showAddSupplierModal()">+ New</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Invoice / Reference #</label>
+            <input type="text" id="supplierInvoice" placeholder="e.g. INV-2024-001">
+          </div>
+          <div class="form-group">
+            <label>Condition (all phones)</label>
+            <select id="supplierCondition">
+              <option value="New with Box">New with Box</option>
+              <option value="Like New">Like New</option>
+              <option value="Good">Good</option>
+              <option value="Fair">Fair</option>
+              <option value="Refurbished">Refurbished</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="border-top:0.5px solid var(--border);margin:16px 0;padding-top:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <div class="card-title" style="margin-bottom:0;">📦 Phones in this Order</div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-outline btn-sm" onclick="addSupplierRow()">+ Add Row</button>
+              <button class="btn btn-outline btn-sm" onclick="addSupplierCsvUpload()">📄 Upload CSV</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>IMEI *</th><th>Brand *</th><th>Model *</th><th>Storage</th><th>Color</th><th>Cost ($)</th><th>Retail ($) *</th><th></th></tr></thead>
+              <tbody id="supplierRows">
+                <!-- rows added dynamically -->
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top:8px;">
+            <button class="btn btn-outline btn-sm" onclick="addSupplierRow()">+ Add Another Row</button>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:16px;border-top:0.5px solid var(--border);">
+          <div id="supplierRowCount" style="font-size:14px;color:var(--text-muted);">0 phones</div>
+          <button class="btn btn-success" onclick="saveSupplierOrder()">Save All Phones</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="addBulk" style="display:none;">
+      <div class="card" style="max-width:800px;">
+        <div class="card-title">📄 Import from CSV</div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">
+          Upload a CSV file with your phone inventory. Phones will be added to <strong>${currentStore.name}</strong> as available stock.
+        </p>
+        <div style="margin-bottom:16px;">
+          <button class="btn btn-outline btn-sm" onclick="downloadCsvTemplate()">⬇ Download CSV Template</button>
+        </div>
+        <div id="csvDropZone" style="border:2px dashed var(--border);border-radius:var(--radius);padding:40px 20px;text-align:center;cursor:pointer;transition:all 0.15s;margin-bottom:16px;"
+             onclick="document.getElementById('csvFileInput').click()"
+             ondragover="event.preventDefault();this.style.borderColor='var(--primary)';this.style.background='var(--sidebar-active)'"
+             ondragleave="this.style.borderColor='var(--border)';this.style.background=''"
+             ondrop="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='';handleCsvFile(event.dataTransfer.files[0])">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:36px;height:36px;margin-bottom:8px;opacity:0.4;display:inline-block;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <p style="color:var(--text-muted);font-size:14px;">Drag & drop CSV file here or <span style="color:var(--primary);text-decoration:underline;">browse</span></p>
+          <p style="color:var(--text-muted);font-size:12px;margin-top:4px;">Required columns: brand, model, imei, retail_price</p>
+        </div>
+        <input type="file" id="csvFileInput" accept=".csv" style="display:none;" onchange="handleCsvFile(this.files[0])">
+        <div id="csvPreview"></div>
+      </div>
+    </div>
+  `;
+
+  // Add initial supplier rows
+  window._supplierRowId = 0;
+  addSupplierRow();
+  addSupplierRow();
+  addSupplierRow();
+}
+
+function showAddTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('addCustomer').style.display = tab === 'customer' ? 'block' : 'none';
+  document.getElementById('addSupplier').style.display = tab === 'supplier' ? 'block' : 'none';
+  document.getElementById('addBulk').style.display = tab === 'bulk' ? 'block' : 'none';
+}
+
+function downloadCsvTemplate() {
+  const csv = 'brand,model,imei,color,storage,condition,cost,retail_price,notes\nApple,iPhone 15 Pro Max,123456789012345,Black,256GB,new,899.00,1199.00,Sample entry\n';
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'phonestock-import-template.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function handleCsvFile(file) {
+  if (!file) return;
+  if (!file.name.endsWith('.csv')) return toast('Please upload a .csv file', 'error');
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    parseCsvAndPreview(text);
+  };
+  reader.readAsText(file);
+}
+
+function parseCsvAndPreview(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+  if (lines.length < 2) return toast('CSV file is empty or has no data rows', 'error');
+
+  // Parse header
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
+  const requiredCols = ['brand', 'model', 'imei', 'retail_price'];
+  const missing = requiredCols.filter(c => !headers.includes(c));
+  if (missing.length) return toast('Missing required columns: ' + missing.join(', '), 'error');
+
+  // Parse rows
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseCSVLine(lines[i]);
+    const row = {};
+    headers.forEach((h, j) => { row[h] = (values[j] || '').trim().replace(/^['"]|['"]$/g, ''); });
+    // Auto-normalize brand and model names
+    row._originalBrand = row.brand;
+    row._originalModel = row.model;
+    row.brand = normalizeBrand(row.brand);
+    row.model = normalizeModel(row.brand, row.model);
+    rows.push(row);
+  }
+
+  window._csvRows = rows;
+
+  // Validate each row
+  const validated = rows.map((r, i) => {
+    const errors = [];
+    if (!r.brand) errors.push('Missing brand');
+    if (!r.model) errors.push('Missing model');
+    if (!r.imei) errors.push('Missing IMEI');
+    if (!r.retail_price || isNaN(Number(r.retail_price))) errors.push('Invalid retail_price');
+    return { ...r, _rowNum: i + 2, _errors: errors };
+  });
+
+  window._csvValidated = validated;
+  const validCount = validated.filter(r => r._errors.length === 0).length;
+  const invalidCount = validated.filter(r => r._errors.length > 0).length;
+
+  document.getElementById('csvPreview').innerHTML = `
+    <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <span style="font-size:14px;font-weight:600;">${rows.length} rows found</span>
+        <span style="font-size:13px;color:var(--text-muted);margin-left:8px;">
+          <span style="color:var(--success);">${validCount} valid</span>
+          ${invalidCount ? `<span style="color:var(--danger);margin-left:6px;">${invalidCount} with errors</span>` : ''}
+        </span>
+      </div>
+      ${validCount > 0 ? `<button class="btn btn-success" onclick="importCsvPhones()">Import ${validCount} Phone${validCount !== 1 ? 's' : ''}</button>` : ''}
+    </div>
+    <div class="table-wrap" style="max-height:400px;overflow-y:auto;">
+      <table>
+        <thead><tr><th>Row</th><th>Brand</th><th>Model</th><th>IMEI</th><th>Color</th><th>Storage</th><th>Condition</th><th>Cost</th><th>Retail</th><th>Status</th></tr></thead>
+        <tbody>
+          ${validated.map(r => {
+            const hasErr = r._errors.length > 0;
+            const brandFixed = r._originalBrand && r.brand !== r._originalBrand;
+            const modelFixed = r._originalModel && r.model !== r._originalModel;
+            return `<tr style="${hasErr ? 'background:rgba(163,45,45,0.08);' : ''}">
+              <td>${r._rowNum}</td>
+              <td>${brandFixed ? `<span title="Was: ${r._originalBrand}" style="color:var(--primary);">${r.brand} ✓</span>` : (r.brand || '-')}</td>
+              <td>${modelFixed ? `<span title="Was: ${r._originalModel}" style="color:var(--primary);">${r.model} ✓</span>` : (r.model || '-')}</td>
+              <td style="font-family:monospace;font-size:12px;">${r.imei || '-'}</td>
+              <td>${r.color || '-'}</td>
+              <td>${r.storage || '-'}</td>
+              <td>${r.condition || 'new'}</td>
+              <td>${r.cost ? fmt(r.cost) : '-'}</td>
+              <td>${r.retail_price ? fmt(r.retail_price) : '-'}</td>
+              <td>${hasErr ? `<span style="color:var(--danger);font-size:12px;">${r._errors.join(', ')}</span>` : '<span class="badge badge-available">Ready</span>'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQuotes = !inQuotes; }
+    else if (ch === ',' && !inQuotes) { result.push(current); current = ''; }
+    else { current += ch; }
+  }
+  result.push(current);
+  return result;
+}
+
+async function importCsvPhones() {
+  const validated = window._csvValidated;
+  if (!validated) return;
+
+  const validRows = validated.filter(r => r._errors.length === 0);
+  if (!validRows.length) return toast('No valid rows to import', 'error');
+
+  // Check for duplicate IMEIs within the CSV itself
+  const imeis = validRows.map(r => r.imei);
+  const dupeInFile = imeis.filter((v, i) => imeis.indexOf(v) !== i);
+  if (dupeInFile.length) return toast('Duplicate IMEIs found in CSV: ' + [...new Set(dupeInFile)].join(', '), 'error');
+
+  // Check for existing IMEIs in database
+  const { data: existing } = await db.from('phones').select('imei').in('imei', imeis);
+  const existingImeis = new Set((existing || []).map(p => p.imei));
+
+  const newRows = validRows.filter(r => !existingImeis.has(r.imei));
+  const skippedCount = validRows.length - newRows.length;
+
+  if (!newRows.length) return toast('All IMEIs already exist in the system', 'error');
+
+  // Build phone objects
+  const phones = newRows.map(r => ({
+    brand: r.brand,
+    model: r.model,
+    imei: r.imei,
+    color: r.color || null,
+    storage: r.storage || null,
+    condition: r.condition || 'new',
+    cost: r.cost ? Number(r.cost) : null,
+    retail_price: Number(r.retail_price),
+    notes: r.notes || null,
+    store_id: currentStore.id,
+    status: 'available'
+  }));
+
+  // Insert in batches of 50
+  let imported = 0;
+  let failed = 0;
+  for (let i = 0; i < phones.length; i += 50) {
+    const batch = phones.slice(i, i + 50);
+    const { error } = await db.from('phones').insert(batch);
+    if (error) { failed += batch.length; }
+    else { imported += batch.length; }
+  }
+
+  // Show results
+  let msg = `✅ ${imported} phone${imported !== 1 ? 's' : ''} imported to ${currentStore.name}`;
+  if (skippedCount) msg += ` | ${skippedCount} skipped (duplicate IMEI)`;
+  if (failed) msg += ` | ${failed} failed`;
+
+  document.getElementById('csvPreview').innerHTML = `
+    <div class="card" style="background:var(--sidebar-active);border-color:var(--primary);text-align:center;padding:24px;">
+      <p style="font-size:16px;font-weight:600;color:var(--success);margin-bottom:8px;">Import Complete</p>
+      <p style="font-size:14px;color:var(--text-secondary);">${msg}</p>
+      <button class="btn btn-primary btn-sm" style="margin-top:12px;" onclick="renderAddPhone()">Import More</button>
+    </div>
+  `;
+
+  toast(msg);
+}
+
+// ─── MODEL CATALOG ───
+const MODEL_CATALOG = {
+  Apple: [
+    'iPhone 16 Pro Max', 'iPhone 16 Pro', 'iPhone 16 Plus', 'iPhone 16',
+    'iPhone 15 Pro Max', 'iPhone 15 Pro', 'iPhone 15 Plus', 'iPhone 15',
+    'iPhone 14 Pro Max', 'iPhone 14 Pro', 'iPhone 14 Plus', 'iPhone 14',
+    'iPhone 13 Pro Max', 'iPhone 13 Pro', 'iPhone 13', 'iPhone 13 Mini',
+    'iPhone 12 Pro Max', 'iPhone 12 Pro', 'iPhone 12', 'iPhone 12 Mini',
+    'iPhone 11 Pro Max', 'iPhone 11 Pro', 'iPhone 11',
+    'iPhone SE (3rd Gen)', 'iPhone SE (2nd Gen)',
+    'iPhone XS Max', 'iPhone XS', 'iPhone XR',
+    'iPhone X', 'iPhone 8 Plus', 'iPhone 8', 'iPhone 7 Plus', 'iPhone 7'
+  ],
+  Samsung: [
+    'Galaxy S25 Ultra', 'Galaxy S25+', 'Galaxy S25',
+    'Galaxy S24 Ultra', 'Galaxy S24+', 'Galaxy S24', 'Galaxy S24 FE',
+    'Galaxy S23 Ultra', 'Galaxy S23+', 'Galaxy S23', 'Galaxy S23 FE',
+    'Galaxy S22 Ultra', 'Galaxy S22+', 'Galaxy S22',
+    'Galaxy S21 Ultra', 'Galaxy S21+', 'Galaxy S21', 'Galaxy S21 FE',
+    'Galaxy S20 Ultra', 'Galaxy S20+', 'Galaxy S20', 'Galaxy S20 FE',
+    'Galaxy Z Fold 6', 'Galaxy Z Fold 5', 'Galaxy Z Fold 4',
+    'Galaxy Z Flip 6', 'Galaxy Z Flip 5', 'Galaxy Z Flip 4',
+    'Galaxy A55', 'Galaxy A54', 'Galaxy A35', 'Galaxy A34',
+    'Galaxy A25', 'Galaxy A16', 'Galaxy A15', 'Galaxy A14'
+  ]
+};
+
+function onBrandChange() {
+  const brand = document.getElementById('addBrand').value;
+  const wrap = document.getElementById('modelFieldWrap');
+  const models = MODEL_CATALOG[brand];
+
+  if (models) {
+    wrap.innerHTML = `
+      <select id="addModel">
+        <option value="">Select model</option>
+        ${models.map(m => `<option value="${m}">${m}</option>`).join('')}
+        <option value="__other__">Other (type manually)</option>
+      </select>
+    `;
+    document.getElementById('addModel').addEventListener('change', function() {
+      if (this.value === '__other__') {
+        wrap.innerHTML = `
+          <input type="text" id="addModel" placeholder="Type model name">
+          <small style="font-size:12px;color:var(--text-muted);cursor:pointer;text-decoration:underline;" onclick="onBrandChange()">Back to dropdown</small>
+        `;
+      }
+    });
+  } else {
+    wrap.innerHTML = `<input type="text" id="addModel" placeholder="Enter model name">`;
+  }
+}
+
+function normalizeModel(brand, model) {
+  if (!brand || !model) return model;
+  const brandKey = Object.keys(MODEL_CATALOG).find(b => b.toLowerCase() === brand.toLowerCase());
+  if (!brandKey) return model;
+  const models = MODEL_CATALOG[brandKey];
+  const modelLower = model.toLowerCase().replace(/[^a-z0-9+ ]/g, '').replace(/\s+/g, ' ').trim();
+  for (const std of models) {
+    const stdLower = std.toLowerCase().replace(/[^a-z0-9+ ]/g, '').replace(/\s+/g, ' ').trim();
+    if (modelLower === stdLower) return std;
+  }
+  return model;
+}
+
+function normalizeBrand(brand) {
+  if (!brand) return brand;
+  const known = ['Apple', 'Samsung', 'Google', 'OnePlus', 'Motorola', 'Xiaomi', 'Huawei', 'LG', 'Sony', 'Nokia'];
+  const lower = brand.toLowerCase().trim();
+  for (const b of known) {
+    if (b.toLowerCase() === lower) return b;
+  }
+  return brand;
+}
+
+function validateImei() {
+  const imei = document.getElementById('addImei').value.trim();
+  const hint = document.getElementById('imeiHint');
+  if (imei.length === 0) { hint.textContent = ''; return; }
+  hint.textContent = '✅ IMEI entered'; hint.style.color = 'var(--success)';
+}
+
+async function addPhoneFromCustomer() {
+  const imei = document.getElementById('addImei').value.trim();
+  const brand = document.getElementById('addBrand').value;
+  const model = document.getElementById('addModel').value.trim();
+  const cost = document.getElementById('addCost').value;
+  const retail = document.getElementById('addRetail').value;
+  const custName = document.getElementById('addCustName').value.trim();
+  const custPhone = document.getElementById('addCustPhone').value.trim();
+  const custPayment = document.getElementById('addCustPayment').value;
+
+  if (!imei) return toast('Enter an IMEI', 'error');
+  if (!brand) return toast('Select a brand', 'error');
+  if (!model) return toast('Enter a model name', 'error');
+  if (!cost) return toast('Enter a purchase price', 'error');
+  if (!retail) return toast('Enter a retail price', 'error');
+  if (!custName) return toast('Enter customer name', 'error');
+  if (!custPhone) return toast('Enter customer phone', 'error');
+
+  // Check uniqueness
+  const { data: existing } = await db.from('phones').select('id').eq('imei', imei);
+  if (existing && existing.length > 0) return toast('This IMEI already exists in the system', 'error');
+
+  const storage = document.getElementById('addStorage').value;
+  const color = document.getElementById('addColor').value.trim();
+  const condition = document.getElementById('addCondition').value;
+  const notes = document.getElementById('addNotes').value.trim();
+
+  const phone = {
+    imei, brand, model, storage, color, condition,
+    cost: cost,
+    retail_price: retail,
+    notes,
+    store_id: currentStore.id,
+    status: 'available',
+    source_type: 'customer',
+    source_name: custName,
+    source_phone: custPhone,
+    source_payment_method: custPayment,
+    staff_id: currentStaff?.id || null
+  };
+
+  const { data: phoneData, error } = await db.from('phones').insert([phone]).select().single();
+  if (error) return toast('Failed to add phone: ' + error.message, 'error');
+
+  // Log purchase
+  await db.from('purchases').insert([{
+    phone_id: phoneData.id,
+    imei, model: `${brand} ${model}`,
+    store_id: currentStore.id,
+    purchase_price: cost,
+    source_type: 'customer',
+    source_name: custName,
+    source_phone: custPhone,
+    payment_method: custPayment
+  }]);
+
+  toast('Phone added successfully!');
+
+  // Show success with options
+  const formCard = document.querySelector('#addCustomer .card');
+  const successHtml = `
+    <div style="background:var(--sidebar-active);border:0.5px solid var(--primary);border-radius:var(--radius);padding:16px;margin-bottom:16px;">
+      <p style="font-size:14px;font-weight:600;color:var(--success);margin-bottom:4px;">✅ Phone added: ${brand} ${model} (${imei})</p>
+      <p style="font-size:13px;color:var(--text-secondary);">Bought from ${custName} for ${fmt(cost)} — Payment: ${custPayment}</p>
+    </div>
+  `;
+
+  // Insert success message at top
+  const existingSuccess = document.getElementById('custSuccessMsg');
+  if (existingSuccess) existingSuccess.remove();
+  const div = document.createElement('div');
+  div.id = 'custSuccessMsg';
+  div.innerHTML = successHtml;
+  formCard.insertBefore(div, formCard.firstChild);
+
+  // Clear only phone fields, keep customer info
+  document.getElementById('addImei').value = '';
+  document.getElementById('imeiHint').textContent = '';
+  document.getElementById('addBrand').value = '';
+  onBrandChange();
+  document.getElementById('addStorage').value = '';
+  document.getElementById('addColor').value = '';
+  document.getElementById('addCondition').value = 'New with Box';
+  document.getElementById('addCost').value = '';
+  document.getElementById('addRetail').value = '';
+  document.getElementById('addNotes').value = '';
+
+  // Focus IMEI field for next phone
+  document.getElementById('addImei').focus();
+}
+
+// ─── SUPPLIER FUNCTIONS ───
+function addSupplierRow() {
+  const id = window._supplierRowId++;
+  const tbody = document.getElementById('supplierRows');
+  const tr = document.createElement('tr');
+  tr.id = `supRow${id}`;
+  tr.innerHTML = `
+    <td><input type="text" id="supImei${id}" placeholder="IMEI" style="width:130px;padding:6px 8px;border:0.5px solid var(--border);border-radius:5px;font-size:13px;background:var(--bg-input);color:var(--text);font-family:monospace;"></td>
+    <td>
+      <select id="supBrand${id}" onchange="onSupplierBrandChange(${id})" style="width:100px;padding:6px 8px;border:0.5px solid var(--border);border-radius:5px;font-size:13px;background:var(--bg-input);color:var(--text);">
+        <option value="">Brand</option>
+        <option>Apple</option><option>Samsung</option><option>Google</option><option>OnePlus</option>
+        <option>Motorola</option><option>Xiaomi</option><option>Huawei</option><option>LG</option>
+        <option>Sony</option><option>Nokia</option><option>Other</option>
+      </select>
+    </td>
+    <td><div id="supModelWrap${id}"><input type="text" id="supModel${id}" placeholder="Model" style="width:140px;padding:6px 8px;border:0.5px solid var(--border);border-radius:5px;font-size:13px;background:var(--bg-input);color:var(--text);"></div></td>
+    <td>
+      <select id="supStorage${id}" style="width:80px;padding:6px 8px;border:0.5px solid var(--border);border-radius:5px;font-size:13px;background:var(--bg-input);color:var(--text);">
+        <option value="">-</option>
+        <option>32GB</option><option>64GB</option><option>128GB</option><option>256GB</option><option>512GB</option><option>1TB</option>
+      </select>
+    </td>
+    <td><input type="text" id="supColor${id}" placeholder="Color" style="width:80px;padding:6px 8px;border:0.5px solid var(--border);border-radius:5px;font-size:13px;background:var(--bg-input);color:var(--text);"></td>
+    <td><input type="number" id="supCost${id}" step="0.01" placeholder="0.00" style="width:80px;padding:6px 8px;border:0.5px solid var(--border);border-radius:5px;font-size:13px;background:var(--bg-input);color:var(--text);"></td>
+    <td><input type="number" id="supRetail${id}" step="0.01" placeholder="0.00" style="width:80px;padding:6px 8px;border:0.5px solid var(--border);border-radius:5px;font-size:13px;background:var(--bg-input);color:var(--text);"></td>
+    <td><button class="btn btn-outline btn-sm" onclick="removeSupplierRow(${id})" style="padding:4px 8px;color:var(--danger);">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+  updateSupplierRowCount();
+}
+
+function onSupplierBrandChange(id) {
+  const brand = document.getElementById(`supBrand${id}`).value;
+  const wrap = document.getElementById(`supModelWrap${id}`);
+  const models = MODEL_CATALOG[brand];
+
+  if (models) {
+    wrap.innerHTML = `
+      <select id="supModel${id}" style="width:140px;padding:6px 8px;border:0.5px solid var(--border);border-radius:5px;font-size:13px;background:var(--bg-input);color:var(--text);">
+        <option value="">Model</option>
+        ${models.map(m => `<option value="${m}">${m}</option>`).join('')}
+        <option value="__other__">Other</option>
+      </select>
+    `;
+    document.getElementById(`supModel${id}`).addEventListener('change', function() {
+      if (this.value === '__other__') {
+        wrap.innerHTML = `<input type="text" id="supModel${id}" placeholder="Type model" style="width:140px;padding:6px 8px;border:0.5px solid var(--border);border-radius:5px;font-size:13px;background:var(--bg-input);color:var(--text);">`;
+      }
+    });
+  } else {
+    wrap.innerHTML = `<input type="text" id="supModel${id}" placeholder="Model" style="width:140px;padding:6px 8px;border:0.5px solid var(--border);border-radius:5px;font-size:13px;background:var(--bg-input);color:var(--text);">`;
+  }
+}
+
+function removeSupplierRow(id) {
+  const row = document.getElementById(`supRow${id}`);
+  if (row) row.remove();
+  updateSupplierRowCount();
+}
+
+function updateSupplierRowCount() {
+  const count = document.querySelectorAll('#supplierRows tr').length;
+  const el = document.getElementById('supplierRowCount');
+  if (el) el.textContent = `${count} phone${count !== 1 ? 's' : ''}`;
+}
+
+function addSupplierCsvUpload() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.csv';
+  input.onchange = function() {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const lines = e.target.result.split('\n').map(l => l.trim()).filter(l => l);
+      if (lines.length < 2) return toast('CSV is empty', 'error');
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
+      for (let i = 1; i < lines.length; i++) {
+        const values = parseCSVLine(lines[i]);
+        const row = {};
+        headers.forEach((h, j) => { row[h] = (values[j] || '').trim().replace(/^['"]|['"]$/g, ''); });
+        // Normalize
+        row.brand = normalizeBrand(row.brand || '');
+        row.model = normalizeModel(row.brand, row.model || '');
+        // Add row to table
+        const id = window._supplierRowId++;
+        const tbody = document.getElementById('supplierRows');
+        const tr = document.createElement('tr');
+        tr.id = `supRow${id}`;
+        tr.innerHTML = `
+          <td><input type="text" id="supImei${id}" value="${row.imei || ''}" style="width:130px;padding:6px 8px;border:0.5px solid var(--border);border-radius:5px;font-size:13px;background:var(--bg-input);color:var(--text);font-family:monospace;"></td>
+          <td><select id="supBrand${id}" onchange="onSupplierBrandChange(${id})" style="width:100px;padding:6px 8px;border:0.5px solid var(--border);border-radius:5px;font-size:13px;background:var(--bg-input);color:var(--text);"><option value="">Brand</option><option ${row.brand==='Apple'?'selected':''}>Apple</option><option ${row.brand==='Samsung'?'selected':''}>Samsung</option><option ${row.brand==='Google'?'selected':''}>Google</option><option ${row.brand==='OnePlus'?'selected':''}>OnePlus</option><option ${row.brand==='Motorola'?'selected':''}>Motorola</option><option ${row.brand==='Xiaomi'?'selected':''}>Xiaomi</option><option ${row.brand==='Huawei'?'selected':''}>Huawei</option><option ${row.brand==='LG'?'selected':''}>LG</option><option ${row.brand==='Sony'?'selected':''}>Sony</option><option ${row.brand==='Nokia'?'selected':''}>Nokia</option><option ${row.brand&&!['Apple','Samsung','Google','OnePlus','Motorola','Xiaomi','Huawei','LG','Sony','Nokia'].includes(row.brand)?'selected':''}>Other</option></select></td>
+          <td><div id="supModelWrap${id}"><input type="text" id="supModel${id}" value="${row.model || ''}" style="width:140px;padding:6px 8px;border:0.5px solid var(--border);border-radius:5px;font-size:13px;background:var(--bg-input);color:var(--text);"></div></td>
+          <td><select id="supStorage${id}" style="width:80px;padding:6px 8px;border:0.5px solid var(--border);border-radius:5px;font-size:13px;background:var(--bg-input);color:var(--text);"><option value="">-</option><option ${row.storage==='32GB'?'selected':''}>32GB</option><option ${row.storage==='64GB'?'selected':''}>64GB</option><option ${row.storage==='128GB'?'selected':''}>128GB</option><option ${row.storage==='256GB'?'selected':''}>256GB</option><option ${row.storage==='512GB'?'selected':''}>512GB</option><option ${row.storage==='1TB'?'selected':''}>1TB</option></select></td>
+          <td><input type="text" id="supColor${id}" value="${row.color || ''}" style="width:80px;padding:6px 8px;border:0.5px solid var(--border);border-radius:5px;font-size:13px;background:var(--bg-input);color:var(--text);"></td>
+          <td><input type="number" id="supCost${id}" value="${row.cost || ''}" step="0.01" style="width:80px;padding:6px 8px;border:0.5px solid var(--border);border-radius:5px;font-size:13px;background:var(--bg-input);color:var(--text);"></td>
+          <td><input type="number" id="supRetail${id}" value="${row.retail_price || ''}" step="0.01" style="width:80px;padding:6px 8px;border:0.5px solid var(--border);border-radius:5px;font-size:13px;background:var(--bg-input);color:var(--text);"></td>
+          <td><button class="btn btn-outline btn-sm" onclick="removeSupplierRow(${id})" style="padding:4px 8px;color:var(--danger);">✕</button></td>
+        `;
+        tbody.appendChild(tr);
+      }
+      updateSupplierRowCount();
+      toast(`${lines.length - 1} rows loaded from CSV`);
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+async function saveSupplierOrder() {
+  const supplierId = document.getElementById('supplierId').value;
+  const invoice = document.getElementById('supplierInvoice').value.trim();
+  const condition = document.getElementById('supplierCondition').value;
+
+  if (!supplierId) return toast('Select a supplier', 'error');
+
+  const supplierName = window._suppliers.find(s => s.id === supplierId)?.name || '';
+  const rows = document.querySelectorAll('#supplierRows tr');
+  const phones = [];
+  const errors = [];
+
+  rows.forEach((tr, idx) => {
+    const id = tr.id.replace('supRow', '');
+    const imei = document.getElementById(`supImei${id}`)?.value.trim();
+    const brand = document.getElementById(`supBrand${id}`)?.value;
+    const model = document.getElementById(`supModel${id}`)?.value.trim();
+    const retail = document.getElementById(`supRetail${id}`)?.value;
+
+    if (!imei && !brand && !model && !retail) return; // skip empty rows
+
+    if (!imei) { errors.push(`Row ${idx+1}: Missing IMEI`); return; }
+    if (!brand) { errors.push(`Row ${idx+1}: Missing brand`); return; }
+    if (!model) { errors.push(`Row ${idx+1}: Missing model`); return; }
+    if (!retail) { errors.push(`Row ${idx+1}: Missing retail price`); return; }
+
+    phones.push({
+      imei,
+      brand,
+      model: model === '__other__' ? '' : model,
+      storage: document.getElementById(`supStorage${id}`)?.value || null,
+      color: document.getElementById(`supColor${id}`)?.value.trim() || null,
+      condition,
+      cost: document.getElementById(`supCost${id}`)?.value || null,
+      retail_price: retail,
+      store_id: currentStore.id,
+      status: 'available',
+      source_type: 'supplier',
+      source_name: supplierName,
+      source_invoice: invoice,
+      supplier_id: supplierId,
+      staff_id: currentStaff?.id || null
+    });
+  });
+
+  if (errors.length) return toast(errors[0], 'error');
+  if (!phones.length) return toast('Add at least one phone', 'error');
+
+  // Check for duplicate IMEIs within the batch
+  const imeis = phones.map(p => p.imei);
+  const dupes = imeis.filter((v, i) => imeis.indexOf(v) !== i);
+  if (dupes.length) return toast('Duplicate IMEI in batch: ' + dupes[0], 'error');
+
+  // Check against database
+  const { data: existing } = await db.from('phones').select('imei').in('imei', imeis);
+  const existingImeis = (existing || []).map(p => p.imei);
+  if (existingImeis.length) return toast('IMEI already exists: ' + existingImeis[0], 'error');
+
+  // Insert in batches
+  let imported = 0;
+  for (let i = 0; i < phones.length; i += 50) {
+    const batch = phones.slice(i, i + 50);
+    const { data: insertedPhones, error } = await db.from('phones').insert(batch).select();
+    if (error) return toast('Failed to save: ' + error.message, 'error');
+    imported += batch.length;
+
+    // Log purchases
+    const purchaseRecords = insertedPhones.map(p => ({
+      phone_id: p.id,
+      imei: p.imei,
+      model: `${p.brand} ${p.model}`,
+      store_id: currentStore.id,
+      purchase_price: p.cost,
+      source_type: 'supplier',
+      source_name: supplierName,
+      supplier_id: supplierId,
+      source_invoice: invoice
+    }));
+    await db.from('purchases').insert(purchaseRecords);
+  }
+
+  toast(`${imported} phone${imported !== 1 ? 's' : ''} added from ${supplierName}`);
+  renderAddPhone();
+}
+
+function showAddSupplierModal() {
+  openModal(`
+    <div class="modal-title">Add New Supplier</div>
+    <div class="form-group">
+      <label>Supplier Name *</label>
+      <input type="text" id="newSupName" placeholder="e.g. PhoneWholesale Inc">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Contact Phone</label>
+        <input type="text" id="newSupPhone" placeholder="Phone number">
+      </div>
+      <div class="form-group">
+        <label>Contact Email</label>
+        <input type="email" id="newSupEmail" placeholder="Email">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <textarea id="newSupNotes" placeholder="Any notes..."></textarea>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary btn-block" onclick="saveNewSupplier()">Save Supplier</button>
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+    </div>
+  `);
+}
+
+async function saveNewSupplier() {
+  const name = document.getElementById('newSupName').value.trim();
+  if (!name) return toast('Enter supplier name', 'error');
+
+  const supplier = {
+    name,
+    contact_phone: document.getElementById('newSupPhone').value.trim(),
+    contact_email: document.getElementById('newSupEmail').value.trim(),
+    notes: document.getElementById('newSupNotes').value.trim()
+  };
+
+  const { data, error } = await db.from('suppliers').insert([supplier]).select().single();
+  if (error) return toast('Failed to save supplier: ' + error.message, 'error');
+
+  toast('Supplier added!');
+  closeModal();
+
+  // Refresh supplier dropdown
+  window._suppliers.push(data);
+  const select = document.getElementById('supplierId');
+  const opt = document.createElement('option');
+  opt.value = data.id;
+  opt.textContent = data.name;
+  opt.selected = true;
+  select.appendChild(opt);
+}
+
+// ─── SELL PHONE ───
+async function renderSell() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = loading();
+
+  const { data: phones } = await db.from('phones').select('*').eq('store_id', currentStore.id).eq('status', 'available').order('brand');
+  const list = phones || [];
+
+  main.innerHTML = `
+    <h2 style="margin-bottom:16px;">Sell Phone</h2>
+    <div class="card" style="max-width:700px;">
+      <div class="card-title">Step 1: Select Phone</div>
+      <div class="search-bar">
+        <input type="text" id="sellSearch" placeholder="Search by IMEI, brand, model..." oninput="filterSellList()">
+      </div>
+      <div class="table-wrap" style="max-height:250px;overflow-y:auto;">
+        <table>
+          <thead><tr><th>IMEI</th><th>Brand</th><th>Model</th><th>Storage</th><th>Price</th><th></th></tr></thead>
+          <tbody id="sellTableBody">
+            ${list.length ? list.map(p => `
+              <tr>
+                <td style="font-family:monospace;font-size:12px;">${p.imei}</td>
+                <td>${p.brand}</td><td>${p.model}</td><td>${p.storage || '-'}</td>
+                <td>${fmt(p.retail_price)}</td>
+                <td><button class="btn btn-success btn-sm" onclick="startSale('${p.id}')">Sell</button></td>
+              </tr>
+            `).join('') : `<tr><td colspan="6">${emptyState('No available phones')}</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div id="saleForm"></div>
+  `;
+
+  window._sellData = list;
+}
+
+function filterSellList() {
+  const q = document.getElementById('sellSearch').value.toLowerCase();
+  const rows = (window._sellData || []).filter(p =>
+    !q || p.imei.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q) || p.model.toLowerCase().includes(q)
+  );
+  document.getElementById('sellTableBody').innerHTML = rows.length ? rows.map(p => `
+    <tr>
+      <td style="font-family:monospace;font-size:12px;">${p.imei}</td>
+      <td>${p.brand}</td><td>${p.model}</td><td>${p.storage || '-'}</td>
+      <td>${fmt(p.retail_price)}</td>
+      <td><button class="btn btn-success btn-sm" onclick="startSale('${p.id}')">Sell</button></td>
+    </tr>
+  `).join('') : `<tr><td colspan="6">${emptyState('No matching phones')}</td></tr>`;
+}
+
+async function startSale(phoneId) {
+  const { data: p } = await db.from('phones').select('*').eq('id', phoneId).single();
+  if (!p) return;
+
+  document.getElementById('saleForm').innerHTML = `
+    <div class="card" style="max-width:700px;margin-top:16px;">
+      <div class="card-title">Step 2: Customer Details — ${p.brand} ${p.model} (${p.imei})</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Customer Name *</label>
+          <input type="text" id="custName" placeholder="Full name">
+        </div>
+        <div class="form-group">
+          <label>Phone Number *</label>
+          <input type="text" id="custPhone" placeholder="Phone number">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="custEmail" placeholder="Email address">
+      </div>
+      <div class="form-row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+        <div class="form-group">
+          <label>Sale Price ($) *</label>
+          <input type="number" id="salePrice" step="0.01" value="${p.retail_price}" oninput="updateSaleTotals()">
+        </div>
+        <div class="form-group">
+          <label>Payment Method</label>
+          <select id="payMethod">
+            <option>Cash</option><option>Credit Card</option><option>Debit Card</option>
+            <option>E-Transfer</option><option>Affirm</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Warranty</label>
+          <select id="warrantyPeriod">
+            <option value="12">1 Year</option>
+            <option value="6">6 Months</option>
+            <option value="3">3 Months</option>
+            <option value="1">1 Month</option>
+            <option value="0">No Warranty</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group" id="warrantyCustomWrap" style="display:none;">
+          <label>Custom (months)</label>
+          <input type="number" id="warrantyCustomMonths" placeholder="Months" min="1">
+        </div>
+      </div>
+
+      <!-- Tax Section -->
+      <div style="background:var(--sidebar-hover);border-radius:8px;padding:16px 20px;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <label style="font-size:14px;display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="gstToggle" checked onchange="updateSaleTotals()"> GST (5%)
+          </label>
+          <span id="gstAmount" style="font-size:14px;font-weight:500;color:var(--text);">$0.00</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <label style="font-size:14px;display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="pstToggle" checked onchange="updateSaleTotals()"> PST (7%)
+          </label>
+          <span id="pstAmount" style="font-size:14px;font-weight:500;color:var(--text);">$0.00</span>
+        </div>
+        <div id="taxInclusiveNote" style="display:none;padding:8px 0 8px;font-size:12px;color:var(--warning);border-top:0.5px solid var(--border);margin-bottom:8px;">
+          💡 Cash + no tax: price treated as tax-inclusive. Subtotal back-calculated for accounting.
+        </div>
+        <div id="subtotalRow" style="display:none;display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:var(--text-muted);">
+          <span>Subtotal</span>
+          <span id="saleSubtotal">$0.00</span>
+        </div>
+        <div style="border-top:1.5px solid var(--border);padding-top:10px;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:16px;font-weight:700;">Total</span>
+          <span id="saleTotal" style="font-size:20px;font-weight:700;color:var(--primary);">$0.00</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Sale Notes</label>
+        <textarea id="saleNotes" placeholder="Any notes about this sale..."></textarea>
+      </div>
+      <button class="btn btn-success btn-block" onclick="completeSale('${p.id}')">Complete Sale</button>
+    </div>
+  `;
+
+  // Attach event listeners after DOM is set
+  document.getElementById('warrantyPeriod').addEventListener('change', function() {
+    document.getElementById('warrantyCustomWrap').style.display = this.value === 'other' ? 'block' : 'none';
+  });
+  document.getElementById('payMethod').addEventListener('change', updateSaleTotals);
+  updateSaleTotals();
+}
+
+function updateSaleTotals() {
+  const price = Number(document.getElementById('salePrice')?.value || 0);
+  const gstOn = document.getElementById('gstToggle')?.checked;
+  const pstOn = document.getElementById('pstToggle')?.checked;
+  const payMethod = document.getElementById('payMethod')?.value;
+  const isCashNoTax = payMethod === 'Cash' && !gstOn && !pstOn;
+
+  const noteEl = document.getElementById('taxInclusiveNote');
+  const subtotalRowEl = document.getElementById('subtotalRow');
+  const subtotalEl = document.getElementById('saleSubtotal');
+
+  if (isCashNoTax && price > 0) {
+    // Back-calculate: price is the total (tax-inclusive)
+    const subtotal = Math.round(price / 1.12 * 100) / 100;
+    const gst = Math.round(subtotal * 0.05 * 100) / 100;
+    const pst = Math.round(subtotal * 0.07 * 100) / 100;
+    // Adjust to match exact total
+    const adjustedPst = Math.round((price - subtotal - gst) * 100) / 100;
+
+    if (document.getElementById('gstAmount')) document.getElementById('gstAmount').textContent = '$' + gst.toFixed(2);
+    if (document.getElementById('pstAmount')) document.getElementById('pstAmount').textContent = '$' + adjustedPst.toFixed(2);
+    if (subtotalEl) subtotalEl.textContent = '$' + subtotal.toFixed(2);
+    if (document.getElementById('saleTotal')) document.getElementById('saleTotal').textContent = '$' + price.toFixed(2);
+    if (noteEl) noteEl.style.display = 'block';
+    if (subtotalRowEl) subtotalRowEl.style.display = 'flex';
+  } else {
+    // Normal: price is subtotal, taxes added on top
+    const gst = gstOn ? Math.round(price * 0.05 * 100) / 100 : 0;
+    const pst = pstOn ? Math.round(price * 0.07 * 100) / 100 : 0;
+    const total = price + gst + pst;
+
+    if (document.getElementById('gstAmount')) document.getElementById('gstAmount').textContent = gstOn ? '$' + gst.toFixed(2) : '—';
+    if (document.getElementById('pstAmount')) document.getElementById('pstAmount').textContent = pstOn ? '$' + pst.toFixed(2) : '—';
+    if (document.getElementById('saleTotal')) document.getElementById('saleTotal').textContent = '$' + total.toFixed(2);
+    if (noteEl) noteEl.style.display = 'none';
+    if (subtotalRowEl) subtotalRowEl.style.display = (gstOn || pstOn) ? 'none' : 'none';
+  }
+}
+
+async function completeSale(phoneId) {
+  const name = document.getElementById('custName').value.trim();
+  const phone = document.getElementById('custPhone').value.trim();
+  const price = document.getElementById('salePrice').value;
+
+  if (!name) return toast('Enter customer name', 'error');
+  if (!phone) return toast('Enter customer phone', 'error');
+  if (!price) return toast('Enter sale price', 'error');
+
+  const { data: p } = await db.from('phones').select('*').eq('id', phoneId).single();
+  if (!p) return toast('Phone not found', 'error');
+
+  // Calculate warranty expiry
+  let warrantyMonths = parseInt(document.getElementById('warrantyPeriod').value);
+  if (isNaN(warrantyMonths) || document.getElementById('warrantyPeriod').value === 'other') {
+    warrantyMonths = parseInt(document.getElementById('warrantyCustomMonths')?.value) || 0;
+  }
+
+  let warrantyExpiry = null;
+  const saleDate = new Date();
+  if (warrantyMonths > 0) {
+    const exp = new Date(saleDate);
+    exp.setMonth(exp.getMonth() + warrantyMonths);
+    warrantyExpiry = exp.toISOString();
+  }
+
+  const email = document.getElementById('custEmail').value.trim();
+  const payMethod = document.getElementById('payMethod').value;
+  const notes = document.getElementById('saleNotes').value.trim();
+
+  // Tax calculations
+  const enteredPrice = Number(price);
+  const gstApplied = document.getElementById('gstToggle').checked;
+  const pstApplied = document.getElementById('pstToggle').checked;
+  const isCashNoTax = payMethod === 'Cash' && !gstApplied && !pstApplied;
+
+  let subtotal, gstAmount, pstAmount, totalAmount;
+
+  if (isCashNoTax) {
+    // Cash no-tax: entered price is the total, back-calculate subtotal
+    totalAmount = enteredPrice;
+    subtotal = Math.round(enteredPrice / 1.12 * 100) / 100;
+    gstAmount = Math.round(subtotal * 0.05 * 100) / 100;
+    pstAmount = Math.round((totalAmount - subtotal - gstAmount) * 100) / 100;
+  } else {
+    // Normal: entered price is subtotal, taxes added on top
+    subtotal = enteredPrice;
+    gstAmount = gstApplied ? Math.round(subtotal * 0.05 * 100) / 100 : 0;
+    pstAmount = pstApplied ? Math.round(subtotal * 0.07 * 100) / 100 : 0;
+    totalAmount = subtotal + gstAmount + pstAmount;
+  }
+
+  const sale = {
+    phone_id: phoneId,
+    imei: p.imei,
+    model: `${p.brand} ${p.model}`,
+    store_id: currentStore.id,
+    sale_price: subtotal,
+    subtotal: subtotal,
+    gst_amount: gstAmount,
+    pst_amount: pstAmount,
+    total_amount: totalAmount,
+    gst_applied: isCashNoTax ? true : gstApplied,
+    pst_applied: isCashNoTax ? true : pstApplied,
+    customer_name: name,
+    customer_phone: phone,
+    customer_email: email,
+    payment_method: payMethod,
+    notes: isCashNoTax ? (notes ? notes + ' | Tax-inclusive cash sale' : 'Tax-inclusive cash sale') : notes,
+    warranty_expiry: warrantyExpiry,
+    staff_id: currentStaff?.id || null
+  };
+
+  const { data: saleData, error: saleErr } = await db.from('sales').insert([sale]).select().single();
+  if (saleErr) return toast('Sale failed: ' + saleErr.message, 'error');
+
+  const { error: updateErr } = await db.from('phones').update({ status: 'sold' }).eq('id', phoneId);
+  if (updateErr) return toast('Failed to update phone status', 'error');
+
+  toast(warrantyMonths > 0 ? `Sale completed! ${warrantyMonths}-month warranty generated.` : 'Sale completed!');
+
+  // Generate invoice number
+  const { count } = await db.from('sales').select('id', { count: 'exact', head: true });
+  const invNum = `INV-${saleDate.getFullYear()}-${String(count || 1).padStart(4, '0')}`;
+
+  // Show invoice
+  showInvoice({
+    invoiceNum: invNum,
+    date: saleDate,
+    customer: { name, phone, email },
+    device: p,
+    salePrice: subtotal,
+    gstApplied: isCashNoTax ? true : gstApplied,
+    pstApplied: isCashNoTax ? true : pstApplied,
+    gstAmount, pstAmount, totalAmount,
+    payMethod,
+    warrantyMonths,
+    warrantyExpiry: warrantyExpiry ? new Date(warrantyExpiry) : null,
+    storeName: currentStore.name,
+    notes: isCashNoTax ? (notes ? notes + ' | Tax-inclusive cash sale' : 'Tax-inclusive cash sale') : notes
+  });
+}
+
+function showInvoice(data) {
+  const main = document.getElementById('mainContent');
+  const dateStr = data.date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const expiryStr = data.warrantyExpiry ? data.warrantyExpiry.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+
+  const warrantyHtml = data.warrantyMonths > 0 ? `
+    <div style="background:linear-gradient(135deg,#185FA5 0%,#1a7fd4 100%);border-radius:12px;padding:28px 32px;color:#fff;margin-bottom:36px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <h4 style="font-size:18px;font-weight:700;margin-bottom:6px;">🛡️ Warranty Included</h4>
+        <p style="font-size:13px;opacity:0.85;line-height:1.6;">
+          Coverage: ${dateStr} — ${expiryStr}<br>
+          Covers manufacturer defects. Does not cover physical damage, water damage, or unauthorized modifications.
+        </p>
+      </div>
+      <div style="text-align:center;background:rgba(255,255,255,0.15);border-radius:10px;padding:16px 24px;flex-shrink:0;">
+        <div style="font-size:32px;font-weight:700;">${data.warrantyMonths}</div>
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;opacity:0.8;">${data.warrantyMonths === 1 ? 'Month' : 'Months'}</div>
+      </div>
+    </div>
+  ` : `
+    <div style="background:#f8f9fb;border:1px solid #e0e4ea;border-radius:12px;padding:20px 32px;margin-bottom:36px;color:#888;font-size:14px;">
+      No warranty provided with this sale.
+    </div>
+  `;
+
+  const invoiceContent = `
+    <div style="font-family:'Segoe UI',Roboto,sans-serif;max-width:210mm;margin:0 auto;background:#fff;padding:48px;position:relative;">
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:48px;padding-bottom:28px;border-bottom:3px solid #185FA5;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:48px;height:48px;background:#185FA5;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;">📱</div>
+          <div>
+            <h1 style="font-size:22px;font-weight:700;color:#1a1a2e;letter-spacing:-0.5px;margin:0;">Gurus Cell Phone Repairs</h1>
+            <p style="font-size:13px;color:#888;margin:0;">${data.storeName}</p>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="display:inline-block;background:#185FA5;color:#fff;font-size:12px;font-weight:600;padding:4px 14px;border-radius:20px;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">Invoice</div>
+          <p style="font-size:13px;color:#888;line-height:1.8;margin:0;">
+            <strong style="color:#333;">${data.invoiceNum}</strong><br>
+            ${dateStr}
+          </p>
+        </div>
+      </div>
+
+      <!-- Info Grid -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-bottom:40px;">
+        <div style="padding:24px;background:#fafbfc;border-radius:10px;">
+          <h3 style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#185FA5;margin:0 0 14px;font-weight:700;">Customer</h3>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px;border-bottom:1px solid #f0f0f0;">
+            <span style="color:#999;">Name</span>
+            <span style="color:#333;font-weight:500;">${data.customer.name}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px;border-bottom:1px solid #f0f0f0;">
+            <span style="color:#999;">Phone</span>
+            <span style="color:#333;font-weight:500;">${data.customer.phone}</span>
+          </div>
+          ${data.customer.email ? `
+          <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px;">
+            <span style="color:#999;">Email</span>
+            <span style="color:#333;font-weight:500;">${data.customer.email}</span>
+          </div>` : ''}
+        </div>
+        <div style="padding:24px;background:#fafbfc;border-radius:10px;">
+          <h3 style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#185FA5;margin:0 0 14px;font-weight:700;">Payment</h3>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px;border-bottom:1px solid #f0f0f0;">
+            <span style="color:#999;">Method</span>
+            <span style="color:#333;font-weight:500;">${data.payMethod}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px;border-bottom:1px solid #f0f0f0;">
+            <span style="color:#999;">Status</span>
+            <span style="color:#3B6D11;font-weight:500;">Paid in Full</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px;">
+            <span style="color:#999;">Date</span>
+            <span style="color:#333;font-weight:500;">${dateStr}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Device -->
+      <div style="margin-bottom:36px;">
+        <h3 style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#185FA5;margin:0 0 16px;font-weight:700;">Device</h3>
+        <div style="border:1.5px solid #e8ecf1;border-radius:10px;padding:24px;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <h4 style="font-size:20px;font-weight:700;color:#1a1a2e;margin:0 0 6px;">${data.device.brand} ${data.device.model}</h4>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              ${data.device.storage ? `<span style="font-size:12px;color:#666;background:#f0f4f8;padding:4px 12px;border-radius:20px;">${data.device.storage}</span>` : ''}
+              ${data.device.color ? `<span style="font-size:12px;color:#666;background:#f0f4f8;padding:4px 12px;border-radius:20px;">${data.device.color}</span>` : ''}
+              ${data.device.condition ? `<span style="font-size:12px;color:#666;background:#f0f4f8;padding:4px 12px;border-radius:20px;">${data.device.condition}</span>` : ''}
+            </div>
+            <div style="font-family:monospace;font-size:13px;color:#999;margin-top:8px;">IMEI: ${data.device.imei}</div>
+          </div>
+          <div style="font-size:28px;font-weight:700;color:#185FA5;">${fmt(data.salePrice)}</div>
+        </div>
+      </div>
+
+      <!-- Total -->
+      <div style="display:flex;justify-content:flex-end;margin-bottom:36px;">
+        <div style="width:280px;">
+          <div style="display:flex;justify-content:space-between;padding:7px 0;font-size:14px;color:#888;">
+            <span>Subtotal</span>
+            <span style="color:#333;font-weight:500;">${fmt(data.salePrice)}</span>
+          </div>
+          ${data.gstApplied ? `
+          <div style="display:flex;justify-content:space-between;padding:7px 0;font-size:14px;color:#888;">
+            <span>GST (5%)</span>
+            <span style="color:#333;font-weight:500;">${fmt(data.gstAmount)}</span>
+          </div>` : ''}
+          ${data.pstApplied ? `
+          <div style="display:flex;justify-content:space-between;padding:7px 0;font-size:14px;color:#888;">
+            <span>PST (7%)</span>
+            <span style="color:#333;font-weight:500;">${fmt(data.pstAmount)}</span>
+          </div>` : ''}
+          <div style="display:flex;justify-content:space-between;padding:12px 0;border-top:2px solid #1a1a2e;margin-top:6px;font-size:18px;font-weight:700;color:#1a1a2e;">
+            <span>Total</span>
+            <span style="color:#185FA5;">${fmt(data.totalAmount)}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Warranty -->
+      ${warrantyHtml}
+
+      <!-- Terms -->
+      <div style="margin-bottom:20px;">
+        <h4 style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#ccc;margin:0 0 8px;font-weight:700;">Terms & Conditions</h4>
+        <p style="font-size:11px;color:#bbb;line-height:1.7;margin:0;">
+          All sales are final. Returns accepted within 7 days with original receipt in unused condition.
+          Warranty claims must be accompanied by this invoice. Device must not show signs of physical damage,
+          water damage, or unauthorized repair. Gurus Cell Phone Repairs reserves the right to inspect
+          the device before processing any warranty claim.
+        </p>
+      </div>
+
+      <!-- Footer -->
+      <div style="padding-top:20px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #f0f0f0;">
+        <p style="font-size:12px;color:#bbb;margin:0;">Gurus Cell Phone Repairs • All locations</p>
+        <div style="font-size:15px;font-weight:600;color:#185FA5;">Thank you for your purchase!</div>
+      </div>
+    </div>
+  `;
+
+  main.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2>Sale Complete</h2>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary" onclick="printInvoice()">🖨 Print Invoice</button>
+        <button class="btn btn-outline" onclick="renderSell()">New Sale</button>
+      </div>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;" id="invoiceCard">
+      ${invoiceContent}
+    </div>
+  `;
+
+  // Store for printing
+  window._invoiceHtml = invoiceContent;
+}
+
+function printInvoice() {
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Invoice</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; }
+        @media print {
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+        @page { size: A4; margin: 0; }
+      </style>
+    </head>
+    <body>
+      ${window._invoiceHtml}
+      <script>window.onload = function() { window.print(); window.close(); }<\/script>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+}
+
+// ─── TRANSFER ───
+async function renderTransfer() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = loading();
+
+  const [phonesRes, transfersRes] = await Promise.all([
+    db.from('phones').select('*').eq('store_id', currentStore.id).eq('status', 'available').order('brand'),
+    db.from('transfers').select('*').order('transferred_at', { ascending: false }).limit(20)
+  ]);
+
+  const phones = phonesRes.data || [];
+  const transfers = transfersRes.data || [];
+
+  main.innerHTML = `
+    <h2 style="margin-bottom:16px;">Transfer Phones</h2>
+    <div class="tabs">
+      <button class="tab active" onclick="showTransferTab('send',this)">Send Phone</button>
+      <button class="tab" onclick="showTransferTab('history',this)">Transfer History</button>
+    </div>
+
+    <div id="transferSend">
+      <div class="card" style="max-width:700px;">
+        <div class="card-title">Select phone to transfer from ${currentStore.name}</div>
+        <div class="search-bar">
+          <input type="text" id="transSearch" placeholder="Search by IMEI, brand, model..." oninput="filterTransferList()">
+        </div>
+        <div class="table-wrap" style="max-height:250px;overflow-y:auto;">
+          <table>
+            <thead><tr><th>IMEI</th><th>Brand</th><th>Model</th><th>Storage</th><th></th></tr></thead>
+            <tbody id="transTableBody">
+              ${phones.length ? phones.map(p => `
+                <tr>
+                  <td style="font-family:monospace;font-size:12px;">${p.imei}</td>
+                  <td>${p.brand}</td><td>${p.model}</td><td>${p.storage || '-'}</td>
+                  <td><button class="btn btn-primary btn-sm" onclick="startTransfer('${p.id}')">Transfer</button></td>
+                </tr>
+              `).join('') : `<tr><td colspan="5">${emptyState('No available phones to transfer')}</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div id="transferForm"></div>
+    </div>
+
+    <div id="transferHistory" style="display:none;">
+      <div class="card">
+        <div class="card-title">Recent Transfers (All Stores)</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>IMEI</th><th>Model</th><th>From</th><th>To</th><th>Date</th></tr></thead>
+            <tbody>
+              ${transfers.length ? transfers.map(t => `
+                <tr>
+                  <td style="font-family:monospace;font-size:12px;">${t.imei || '-'}</td>
+                  <td>${t.model || '-'}</td>
+                  <td>${allStores.find(s => s.id === t.from_store_id)?.name || '-'}</td>
+                  <td>${allStores.find(s => s.id === t.to_store_id)?.name || '-'}</td>
+                  <td>${fmtDate(t.transferred_at)}</td>
+                </tr>
+              `).join('') : `<tr><td colspan="5">${emptyState('No transfers yet')}</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+
+  window._transData = phones;
+}
+
+function showTransferTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('transferSend').style.display = tab === 'send' ? 'block' : 'none';
+  document.getElementById('transferHistory').style.display = tab === 'history' ? 'block' : 'none';
+}
+
+function filterTransferList() {
+  const q = document.getElementById('transSearch').value.toLowerCase();
+  const rows = (window._transData || []).filter(p =>
+    !q || p.imei.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q) || p.model.toLowerCase().includes(q)
+  );
+  document.getElementById('transTableBody').innerHTML = rows.length ? rows.map(p => `
+    <tr>
+      <td style="font-family:monospace;font-size:12px;">${p.imei}</td>
+      <td>${p.brand}</td><td>${p.model}</td><td>${p.storage || '-'}</td>
+      <td><button class="btn btn-primary btn-sm" onclick="startTransfer('${p.id}')">Transfer</button></td>
+    </tr>
+  `).join('') : `<tr><td colspan="5">${emptyState('No matching phones')}</td></tr>`;
+}
+
+async function startTransfer(phoneId) {
+  const { data: p } = await db.from('phones').select('*').eq('id', phoneId).single();
+  if (!p) return;
+
+  const otherStores = allStores.filter(s => s.id !== currentStore.id);
+
+  document.getElementById('transferForm').innerHTML = `
+    <div class="card" style="max-width:700px;margin-top:16px;">
+      <div class="card-title">Transfer: ${p.brand} ${p.model} (${p.imei})</div>
+      <div class="form-group">
+        <label>Destination Store *</label>
+        <select id="destStore">
+          <option value="">Select destination</option>
+          ${otherStores.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+        </select>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="completeTransfer('${p.id}')">Confirm Transfer</button>
+    </div>
+  `;
+}
+
+async function completeTransfer(phoneId) {
+  const destId = document.getElementById('destStore').value;
+  if (!destId) return toast('Select a destination store', 'error');
+
+  const { data: p } = await db.from('phones').select('*').eq('id', phoneId).single();
+  if (!p) return toast('Phone not found', 'error');
+
+  const transfer = {
+    phone_id: phoneId,
+    imei: p.imei,
+    model: `${p.brand} ${p.model}`,
+    from_store_id: currentStore.id,
+    to_store_id: destId
+  };
+
+  const { error: tErr } = await db.from('transfers').insert([transfer]);
+  if (tErr) return toast('Transfer failed: ' + tErr.message, 'error');
+
+  const { error: uErr } = await db.from('phones').update({ store_id: destId, status: 'available' }).eq('id', phoneId);
+  if (uErr) return toast('Failed to update phone store', 'error');
+
+  const destName = allStores.find(s => s.id === destId)?.name;
+  toast(`Phone transferred to ${destName}`);
+  renderTransfer();
+}
+
+// ─── WARRANTY ───
+async function renderWarranty() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = `
+    <h2 style="margin-bottom:16px;">Warranty Lookup</h2>
+    <div class="card" style="max-width:900px;">
+      <div class="search-bar">
+        <input type="text" id="warrantySearch" placeholder="Search by IMEI, customer name, phone, or email..." style="flex:1;" onkeydown="if(event.key==='Enter')searchWarranty()">
+        <button class="btn btn-primary" onclick="searchWarranty()">Search</button>
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:-10px;margin-bottom:12px;">Tip: Scan or paste an IMEI for instant lookup</p>
+      <div id="warrantyResults">${emptyState('Enter a search term to find warranty records')}</div>
+    </div>
+  `;
+}
+
+function getWarrantyStatus(sale) {
+  if (!sale.warranty_expiry) {
+    return { label: 'No Warranty', badge: 'badge-missing', detail: 'No warranty provided' };
+  }
+  const now = new Date();
+  const expiry = new Date(sale.warranty_expiry);
+  const saleDate = new Date(sale.sale_date);
+
+  if (expiry > now) {
+    // Calculate remaining time
+    const diffMs = expiry - now;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    let remaining;
+    if (diffDays > 60) {
+      remaining = Math.floor(diffDays / 30) + ' months left';
+    } else if (diffDays > 1) {
+      remaining = diffDays + ' days left';
+    } else {
+      remaining = 'Expires today';
+    }
+
+    // Calculate total warranty duration
+    const totalMonths = Math.round((expiry - saleDate) / (1000 * 60 * 60 * 24 * 30));
+    return { label: remaining, badge: 'badge-active', detail: `${totalMonths}-month warranty`, expiry, saleDate, totalMonths };
+  } else {
+    const diffMs = now - expiry;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    let ago;
+    if (diffDays > 60) {
+      ago = Math.floor(diffDays / 30) + ' months ago';
+    } else if (diffDays > 1) {
+      ago = diffDays + ' days ago';
+    } else {
+      ago = 'Yesterday';
+    }
+    const totalMonths = Math.round((expiry - saleDate) / (1000 * 60 * 60 * 24 * 30));
+    return { label: 'Expired', badge: 'badge-expired', detail: `Expired ${ago}`, expiry, saleDate, totalMonths };
+  }
+}
+
+async function searchWarranty() {
+  const q = document.getElementById('warrantySearch').value.trim();
+  if (!q) return toast('Enter a search term', 'error');
+
+  document.getElementById('warrantyResults').innerHTML = loading();
+
+  const { data: sales } = await db.from('sales').select('*').or(`customer_name.ilike.%${q}%,customer_phone.ilike.%${q}%,customer_email.ilike.%${q}%,imei.ilike.%${q}%`);
+
+  const list = sales || [];
+
+  // Sort: IMEI exact matches first, then active warranties first
+  list.sort((a, b) => {
+    const aImeiMatch = a.imei && a.imei.toLowerCase().includes(q.toLowerCase()) ? 0 : 1;
+    const bImeiMatch = b.imei && b.imei.toLowerCase().includes(q.toLowerCase()) ? 0 : 1;
+    if (aImeiMatch !== bImeiMatch) return aImeiMatch - bImeiMatch;
+    const aActive = a.warranty_expiry && new Date(a.warranty_expiry) > new Date() ? 0 : 1;
+    const bActive = b.warranty_expiry && new Date(b.warranty_expiry) > new Date() ? 0 : 1;
+    return aActive - bActive;
+  });
+
+  window._warrantyResults = list;
+
+  document.getElementById('warrantyResults').innerHTML = list.length ? `
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">${list.length} record${list.length !== 1 ? 's' : ''} found</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Customer</th><th>Phone</th><th>IMEI</th><th>Sale Price</th><th>Payment</th><th>Store</th><th>Sold</th><th>Warranty</th></tr></thead>
+        <tbody>
+          ${list.map((s, i) => {
+            const ws = getWarrantyStatus(s);
+            return `<tr onclick="showWarrantyDetail(${i})" style="cursor:pointer;">
+              <td><strong>${s.customer_name}</strong><br><span style="font-size:12px;color:var(--text-muted);">${s.customer_phone || ''}</span></td>
+              <td>${s.model || '-'}</td>
+              <td style="font-family:monospace;font-size:12px;">${s.imei || '-'}</td>
+              <td>${fmt(s.sale_price)}</td>
+              <td>${s.payment_method || '-'}</td>
+              <td>${allStores.find(st => st.id === s.store_id)?.name || '-'}</td>
+              <td>${fmtDate(s.sale_date)}</td>
+              <td><span class="badge ${ws.badge}">${ws.label}</span></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  ` : emptyState('No warranty records found');
+}
+
+async function showWarrantyDetail(index) {
+  const s = window._warrantyResults[index];
+  if (!s) return;
+
+  const ws = getWarrantyStatus(s);
+  const storeName = allStores.find(st => st.id === s.store_id)?.name || '-';
+
+  // Fetch phone details for specs and source info
+  let phoneDetail = null;
+  if (s.phone_id) {
+    const { data } = await db.from('phones').select('*').eq('id', s.phone_id).single();
+    phoneDetail = data;
+  }
+
+  const sourceHtml = phoneDetail && phoneDetail.source_type ? `
+    <tr><td colspan="2" style="padding:12px 0 6px;font-weight:600;color:var(--primary);">📦 Source</td></tr>
+    <tr><td style="color:var(--text-muted);padding:4px 0;">Bought from</td><td style="padding:4px 0;">${phoneDetail.source_type === 'customer' ? 'Customer' : 'Supplier'}</td></tr>
+    <tr><td style="color:var(--text-muted);padding:4px 0;">Source Name</td><td style="padding:4px 0;">${phoneDetail.source_name || '-'}</td></tr>
+    ${phoneDetail.source_type === 'supplier' && phoneDetail.source_invoice ? `<tr><td style="color:var(--text-muted);padding:4px 0;">Invoice</td><td style="padding:4px 0;">${phoneDetail.source_invoice}</td></tr>` : ''}
+    ${phoneDetail.cost ? `<tr><td style="color:var(--text-muted);padding:4px 0;">Purchase Price</td><td style="padding:4px 0;">${fmt(phoneDetail.cost)}</td></tr>` : ''}
+  ` : '';
+
+  const warrantyTimelineHtml = ws.expiry ? `
+    <tr><td colspan="2" style="padding:12px 0 6px;font-weight:600;color:var(--primary);">🛡️ Warranty Timeline</td></tr>
+    <tr><td style="color:var(--text-muted);padding:4px 0;">Duration</td><td style="padding:4px 0;">${ws.totalMonths} month${ws.totalMonths !== 1 ? 's' : ''}</td></tr>
+    <tr><td style="color:var(--text-muted);padding:4px 0;">Start Date</td><td style="padding:4px 0;">${fmtDate(s.sale_date)}</td></tr>
+    <tr><td style="color:var(--text-muted);padding:4px 0;">Expiry Date</td><td style="padding:4px 0;">${fmtDate(ws.expiry)}</td></tr>
+    <tr><td style="color:var(--text-muted);padding:4px 0;">Status</td><td style="padding:4px 0;"><span class="badge ${ws.badge}">${ws.label}</span> <span style="font-size:12px;color:var(--text-muted);">${ws.detail}</span></td></tr>
+  ` : `
+    <tr><td colspan="2" style="padding:12px 0 6px;font-weight:600;color:var(--primary);">🛡️ Warranty</td></tr>
+    <tr><td style="color:var(--text-muted);padding:4px 0;">Status</td><td style="padding:4px 0;"><span class="badge badge-missing">No Warranty</span></td></tr>
+  `;
+
+  openModal(`
+    <div class="modal-title">${s.model || 'Phone'} — Warranty Detail</div>
+    <table style="width:100%;">
+      <tr><td colspan="2" style="padding:0 0 6px;font-weight:600;color:var(--primary);">📱 Phone</td></tr>
+      <tr><td style="color:var(--text-muted);padding:4px 0;width:140px;">Model</td><td style="padding:4px 0;">${s.model || '-'}</td></tr>
+      ${phoneDetail ? `
+        <tr><td style="color:var(--text-muted);padding:4px 0;">Storage</td><td style="padding:4px 0;">${phoneDetail.storage || '-'}</td></tr>
+        <tr><td style="color:var(--text-muted);padding:4px 0;">Color</td><td style="padding:4px 0;">${phoneDetail.color || '-'}</td></tr>
+        <tr><td style="color:var(--text-muted);padding:4px 0;">Condition</td><td style="padding:4px 0;">${phoneDetail.condition || '-'}</td></tr>
+      ` : ''}
+      <tr><td style="color:var(--text-muted);padding:4px 0;">IMEI</td><td style="padding:4px 0;font-family:monospace;">${s.imei || '-'}</td></tr>
+
+      <tr><td colspan="2" style="padding:12px 0 6px;font-weight:600;color:var(--primary);">👤 Customer</td></tr>
+      <tr><td style="color:var(--text-muted);padding:4px 0;">Name</td><td style="padding:4px 0;">${s.customer_name || '-'}</td></tr>
+      <tr><td style="color:var(--text-muted);padding:4px 0;">Phone</td><td style="padding:4px 0;">${s.customer_phone || '-'}</td></tr>
+      <tr><td style="color:var(--text-muted);padding:4px 0;">Email</td><td style="padding:4px 0;">${s.customer_email || '-'}</td></tr>
+
+      <tr><td colspan="2" style="padding:12px 0 6px;font-weight:600;color:var(--primary);">💰 Sale</td></tr>
+      <tr><td style="color:var(--text-muted);padding:4px 0;">Sale Price</td><td style="padding:4px 0;">${fmt(s.sale_price)}</td></tr>
+      <tr><td style="color:var(--text-muted);padding:4px 0;">Payment</td><td style="padding:4px 0;">${s.payment_method || '-'}</td></tr>
+      <tr><td style="color:var(--text-muted);padding:4px 0;">Sale Date</td><td style="padding:4px 0;">${fmtDate(s.sale_date)}</td></tr>
+      <tr><td style="color:var(--text-muted);padding:4px 0;">Store</td><td style="padding:4px 0;">${storeName}</td></tr>
+      ${s.notes ? `<tr><td style="color:var(--text-muted);padding:4px 0;">Notes</td><td style="padding:4px 0;">${s.notes}</td></tr>` : ''}
+
+      ${warrantyTimelineHtml}
+      ${sourceHtml}
+    </table>
+    <div style="margin-top:16px;">
+      <button class="btn btn-outline btn-sm" onclick="closeModal()">Close</button>
+    </div>
+  `);
+}
+
+// ─── PHYSICAL COUNT ───
+async function renderCount() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = `
+    <h2 style="margin-bottom:16px;">Physical Count — ${currentStore.name}</h2>
+    <div class="tabs">
+      <button class="tab active" onclick="showCountTab('new',this)">New Count</button>
+      <button class="tab" onclick="showCountTab('history',this)">Count History</button>
+    </div>
+    <div id="countNewTab"></div>
+    <div id="countHistoryTab" style="display:none;"></div>
+  `;
+  loadNewCount();
+}
+
+function showCountTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('countNewTab').style.display = tab === 'new' ? 'block' : 'none';
+  document.getElementById('countHistoryTab').style.display = tab === 'history' ? 'block' : 'none';
+  if (tab === 'history') loadCountHistory();
+}
+
+async function loadNewCount() {
+  const container = document.getElementById('countNewTab');
+  container.innerHTML = loading();
+
+  const { data: phones } = await db.from('phones').select('*').eq('store_id', currentStore.id).eq('status', 'available').order('brand');
+  const list = phones || [];
+
+  window._countData = list.map(p => ({ ...p, countStatus: null }));
+
+  container.innerHTML = `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <div>
+          <span style="font-size:14px;font-weight:600;" id="countProgress">0</span> / ${list.length} counted
+          <span id="countMissingBadge" style="display:none;margin-left:10px;"><span class="badge badge-missing" id="countMissingNum">0 missing</span></span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-outline btn-sm" onclick="markAllFound()">Mark All Found</button>
+          <button class="btn btn-outline btn-sm" onclick="exportCountCSV()">Export CSV</button>
+          <button class="btn btn-primary btn-sm" id="completeCountBtn" onclick="completeCount()" disabled>Complete Count</button>
+        </div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <input type="text" id="countSearch" placeholder="Search by IMEI or model..." oninput="filterCountList()" style="width:100%;padding:9px 12px;border:0.5px solid var(--border);border-radius:7px;font-size:14px;background:var(--bg-input);color:var(--text);">
+      </div>
+      <div id="countList">
+        ${list.length ? list.map((p, i) => countRowHtml(p, i)).join('') : emptyState('No available phones to count')}
+      </div>
+    </div>
+    <div id="countResultArea"></div>
+  `;
+}
+
+function countRowHtml(p, i) {
+  return `<div class="count-row" id="countRow${i}" data-imei="${p.imei.toLowerCase()}" data-model="${(p.brand + ' ' + p.model).toLowerCase()}">
+    <div class="count-info">
+      <div class="count-model">${p.brand} ${p.model} ${p.storage || ''} ${p.color || ''}</div>
+      <div class="count-imei">${p.imei}</div>
+    </div>
+    <div class="count-actions">
+      <button class="btn btn-sm btn-success" onclick="markCount(${i},'found')" id="foundBtn${i}">Found</button>
+      <button class="btn btn-sm btn-warning" onclick="markCount(${i},'missing')" id="missingBtn${i}">Missing</button>
+    </div>
+  </div>`;
+}
+
+function filterCountList() {
+  const q = document.getElementById('countSearch').value.toLowerCase();
+  document.querySelectorAll('.count-row').forEach(row => {
+    const imei = row.getAttribute('data-imei') || '';
+    const model = row.getAttribute('data-model') || '';
+    row.style.display = (!q || imei.includes(q) || model.includes(q)) ? '' : 'none';
+  });
+}
+
+function markCount(i, status) {
+  window._countData[i].countStatus = status;
+  const row = document.getElementById(`countRow${i}`);
+
+  const foundBtn = document.getElementById(`foundBtn${i}`);
+  const missingBtn = document.getElementById(`missingBtn${i}`);
+
+  if (status === 'found') {
+    foundBtn.style.outline = '2px solid var(--success)';
+    foundBtn.style.opacity = '1';
+    missingBtn.style.outline = 'none';
+    missingBtn.style.opacity = '0.5';
+    row.style.background = '';
+  } else {
+    missingBtn.style.outline = '2px solid var(--warning)';
+    missingBtn.style.opacity = '1';
+    foundBtn.style.outline = 'none';
+    foundBtn.style.opacity = '0.5';
+    row.style.background = 'rgba(163,45,45,0.06)';
+  }
+
+  updateCountProgress();
+}
+
+function updateCountProgress() {
+  const data = window._countData;
+  const counted = data.filter(p => p.countStatus).length;
+  const missing = data.filter(p => p.countStatus === 'missing').length;
+
+  document.getElementById('countProgress').textContent = counted;
+
+  const missingBadge = document.getElementById('countMissingBadge');
+  const missingNum = document.getElementById('countMissingNum');
+  if (missing > 0) {
+    missingBadge.style.display = 'inline';
+    missingNum.textContent = `${missing} missing`;
+  } else {
+    missingBadge.style.display = 'none';
+  }
+
+  // Enable complete button only when all counted
+  const btn = document.getElementById('completeCountBtn');
+  if (counted === data.length && data.length > 0) {
+    btn.disabled = false;
+    btn.classList.remove('btn-primary');
+    btn.classList.add('btn-success');
+  } else {
+    btn.disabled = true;
+    btn.classList.remove('btn-success');
+    btn.classList.add('btn-primary');
+  }
+}
+
+function markAllFound() {
+  window._countData.forEach((p, i) => markCount(i, 'found'));
+}
+
+function exportCountCSV() {
+  const data = window._countData;
+  const csv = 'IMEI,Brand,Model,Storage,Color,Retail Price,Status\n' +
+    data.map(p => `${p.imei},${p.brand},${p.model},${p.storage || ''},${p.color || ''},${p.retail_price || ''},${p.countStatus || 'uncounted'}`).join('\n');
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `physical-count-${currentStore.name}-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('CSV exported!');
+}
+
+async function completeCount() {
+  const data = window._countData;
+  const uncounted = data.filter(p => !p.countStatus).length;
+  if (uncounted > 0) return toast(`${uncounted} phones not yet counted`, 'error');
+
+  const found = data.filter(p => p.countStatus === 'found');
+  const missing = data.filter(p => p.countStatus === 'missing');
+  const missingValue = missing.reduce((a, p) => a + Number(p.retail_price || 0), 0);
+
+  // Save count to database
+  const { data: countRecord, error: countErr } = await db.from('physical_counts').insert([{
+    store_id: currentStore.id,
+    expected_count: data.length,
+    found_count: found.length,
+    missing_count: missing.length
+  }]).select().single();
+
+  if (countErr) return toast('Failed to save count: ' + countErr.message, 'error');
+
+  // Save individual items
+  const items = data.map(p => ({
+    count_id: countRecord.id,
+    phone_id: p.id,
+    imei: p.imei,
+    model: `${p.brand} ${p.model}`,
+    status: p.countStatus
+  }));
+
+  const { error: itemsErr } = await db.from('physical_count_items').insert(items);
+  if (itemsErr) return toast('Failed to save count items: ' + itemsErr.message, 'error');
+
+  toast('Count saved successfully!');
+  showVarianceReport(countRecord.id, data, found, missing, missingValue);
+}
+
+function showVarianceReport(countId, allData, found, missing, missingValue) {
+  const area = document.getElementById('countResultArea');
+  area.innerHTML = `
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">📊 Variance Report — ${new Date().toLocaleDateString()}</div>
+
+      <div class="metrics-grid" style="margin-bottom:16px;">
+        <div class="metric-card">
+          <div class="metric-label">Expected</div>
+          <div class="metric-value">${allData.length}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Found</div>
+          <div class="metric-value green">${found.length}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Missing</div>
+          <div class="metric-value red">${missing.length}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Missing Value</div>
+          <div class="metric-value red">${fmt(missingValue)}</div>
+        </div>
+      </div>
+
+      ${missing.length ? `
+        <div class="card-title" style="margin-top:16px;">⚠️ Missing Phones</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>IMEI</th><th>Brand</th><th>Model</th><th>Storage</th><th>Color</th><th>Retail</th><th>Resolution</th></tr></thead>
+            <tbody>
+              ${missing.map(p => `
+                <tr id="resolveRow_${p.id}">
+                  <td style="font-family:monospace;font-size:12px;">${p.imei}</td>
+                  <td>${p.brand}</td><td>${p.model}</td>
+                  <td>${p.storage || '-'}</td><td>${p.color || '-'}</td>
+                  <td>${fmt(p.retail_price)}</td>
+                  <td>
+                    <select id="resolve_${p.id}" style="padding:5px 8px;border:0.5px solid var(--border);border-radius:5px;font-size:12px;background:var(--bg-input);color:var(--text);">
+                      <option value="">Unresolved</option>
+                      <option value="found_later">Found Later</option>
+                      <option value="lost">Lost</option>
+                      <option value="stolen">Stolen</option>
+                      <option value="damaged">Damaged</option>
+                      <option value="data_error">Data Entry Error</option>
+                    </select>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top:12px;">
+          <div class="form-group">
+            <label>Resolution Notes</label>
+            <textarea id="resolutionNotes" placeholder="Any notes about the missing phones..."></textarea>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveResolutions('${countId}')">Save Resolutions</button>
+        </div>
+      ` : '<p style="color:var(--success);font-size:14px;text-align:center;padding:16px;">✅ All phones accounted for — no variance!</p>'}
+
+      <div style="margin-top:20px;padding-top:16px;border-top:0.5px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-outline btn-sm" onclick="exportCountCSV()">Export CSV</button>
+        <button class="btn btn-primary btn-sm" onclick="showEmailModal('${countId}')">📧 Email Report</button>
+      </div>
+    </div>
+  `;
+}
+
+async function saveResolutions(countId) {
+  const data = window._countData.filter(p => p.countStatus === 'missing');
+  const notes = document.getElementById('resolutionNotes').value.trim();
+  let resolved = 0;
+
+  for (const p of data) {
+    const resolution = document.getElementById(`resolve_${p.id}`)?.value;
+    if (!resolution) continue;
+
+    // Update count item
+    await db.from('physical_count_items')
+      .update({ resolution, resolution_notes: notes, resolved_at: new Date().toISOString() })
+      .eq('count_id', countId)
+      .eq('phone_id', p.id);
+
+    // Update phone status based on resolution
+    if (resolution === 'found_later') {
+      // Phone is back — keep as available
+      resolved++;
+    } else if (resolution === 'lost' || resolution === 'stolen' || resolution === 'damaged') {
+      await db.from('phones').update({ status: resolution }).eq('id', p.id);
+      resolved++;
+    } else if (resolution === 'data_error') {
+      await db.from('phones').update({ status: 'data_error' }).eq('id', p.id);
+      resolved++;
+    }
+  }
+
+  if (resolved > 0) {
+    toast(`${resolved} resolution${resolved !== 1 ? 's' : ''} saved`);
+  } else {
+    toast('No resolutions selected', 'error');
+  }
+}
+
+function showEmailModal(countId) {
+  const data = window._countData;
+  const found = data.filter(p => p.countStatus === 'found');
+  const missing = data.filter(p => p.countStatus === 'missing');
+
+  openModal(`
+    <div class="modal-title">📧 Email Count Report</div>
+    <div class="form-group">
+      <label>Recipient Email *</label>
+      <input type="email" id="reportEmail" placeholder="manager@example.com">
+    </div>
+    <div class="form-group">
+      <label>Additional Recipients (comma separated)</label>
+      <input type="text" id="reportEmailCc" placeholder="owner@example.com, admin@example.com">
+    </div>
+    <div style="background:var(--sidebar-hover);border-radius:7px;padding:12px;margin-bottom:16px;font-size:13px;">
+      <strong>Report Preview:</strong><br>
+      Store: ${currentStore.name}<br>
+      Date: ${new Date().toLocaleDateString()}<br>
+      Expected: ${data.length} | Found: ${found.length} | Missing: ${missing.length}<br>
+      ${missing.length ? `Missing value: ${fmt(missing.reduce((a, p) => a + Number(p.retail_price || 0), 0))}` : 'No variance — all phones accounted for'}
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary btn-block" onclick="sendEmailReport('${countId}')">Send Report</button>
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+    </div>
+  `);
+}
+
+async function sendEmailReport(countId) {
+  const email = document.getElementById('reportEmail').value.trim();
+  if (!email) return toast('Enter an email address', 'error');
+
+  const ccField = document.getElementById('reportEmailCc').value.trim();
+  const ccEmails = ccField ? ccField.split(',').map(e => e.trim()).filter(e => e) : [];
+
+  const data = window._countData;
+  const found = data.filter(p => p.countStatus === 'found');
+  const missing = data.filter(p => p.countStatus === 'missing');
+  const missingValue = missing.reduce((a, p) => a + Number(p.retail_price || 0), 0);
+
+  const missingRows = missing.map(p =>
+    `<tr><td style="padding:6px 10px;border:1px solid #ddd;font-family:monospace;font-size:12px;">${p.imei}</td><td style="padding:6px 10px;border:1px solid #ddd;">${p.brand}</td><td style="padding:6px 10px;border:1px solid #ddd;">${p.model}</td><td style="padding:6px 10px;border:1px solid #ddd;">${p.storage || '-'}</td><td style="padding:6px 10px;border:1px solid #ddd;">${p.color || '-'}</td><td style="padding:6px 10px;border:1px solid #ddd;">$${Number(p.retail_price||0).toFixed(2)}</td></tr>`
+  ).join('');
+
+  const htmlBody = `
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+      <h2 style="color:#185FA5;">📱 PhoneStock Pro — Physical Count Report</h2>
+      <p><strong>Store:</strong> ${currentStore.name}</p>
+      <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
+      <hr style="border:none;border-top:1px solid #eee;margin:16px 0;">
+      <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+        <tr><td style="padding:8px;font-weight:bold;">Expected Count</td><td style="padding:8px;">${data.length}</td></tr>
+        <tr style="background:#f0fdf4;"><td style="padding:8px;font-weight:bold;color:#2e7d32;">Found</td><td style="padding:8px;color:#2e7d32;">${found.length}</td></tr>
+        <tr style="background:#fef2f2;"><td style="padding:8px;font-weight:bold;color:#c62828;">Missing</td><td style="padding:8px;color:#c62828;">${missing.length}</td></tr>
+        <tr style="background:#fef2f2;"><td style="padding:8px;font-weight:bold;color:#c62828;">Missing Value</td><td style="padding:8px;color:#c62828;">$${missingValue.toFixed(2)}</td></tr>
+      </table>
+      ${missing.length ? `
+        <h3 style="color:#c62828;">⚠️ Missing Phones</h3>
+        <table style="width:100%;border-collapse:collapse;">
+          <thead><tr style="background:#f5f5f5;"><th style="padding:6px 10px;border:1px solid #ddd;text-align:left;">IMEI</th><th style="padding:6px 10px;border:1px solid #ddd;text-align:left;">Brand</th><th style="padding:6px 10px;border:1px solid #ddd;text-align:left;">Model</th><th style="padding:6px 10px;border:1px solid #ddd;text-align:left;">Storage</th><th style="padding:6px 10px;border:1px solid #ddd;text-align:left;">Color</th><th style="padding:6px 10px;border:1px solid #ddd;text-align:left;">Retail</th></tr></thead>
+          <tbody>${missingRows}</tbody>
+        </table>
+      ` : '<p style="color:#2e7d32;">✅ All phones accounted for — no variance!</p>'}
+      <hr style="border:none;border-top:1px solid #eee;margin:16px 0;">
+      <p style="font-size:12px;color:#999;">Generated by PhoneStock Pro</p>
+    </div>
+  `;
+
+  try {
+    const res = await fetch(SUPABASE_URL + '/functions/v1/send-count-report', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + SUPABASE_KEY
+      },
+      body: JSON.stringify({
+        to: email,
+        cc: ccEmails,
+        subject: `Physical Count Report — ${currentStore.name} — ${new Date().toLocaleDateString()}`,
+        html: htmlBody
+      })
+    });
+
+    if (res.ok) {
+      toast('Report emailed successfully!');
+      closeModal();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      toast('Email failed: ' + (err.error || 'Check Edge Function setup'), 'error');
+    }
+  } catch (e) {
+    toast('Email failed: Edge Function not deployed yet. See setup instructions.', 'error');
+  }
+}
+
+// ─── COUNT HISTORY ───
+async function loadCountHistory() {
+  const container = document.getElementById('countHistoryTab');
+  container.innerHTML = loading();
+
+  const { data: counts } = await db.from('physical_counts').select('*').eq('store_id', currentStore.id).order('counted_at', { ascending: false });
+  const list = counts || [];
+
+  container.innerHTML = list.length ? `
+    <div class="card">
+      <div class="card-title">📋 Past Counts</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Expected</th><th>Found</th><th>Missing</th><th>Accuracy</th><th></th></tr></thead>
+          <tbody>
+            ${list.map(c => {
+              const accuracy = c.expected_count > 0 ? ((c.found_count / c.expected_count) * 100).toFixed(1) : '100.0';
+              return `<tr>
+                <td>${new Date(c.counted_at).toLocaleString()}</td>
+                <td>${c.expected_count}</td>
+                <td style="color:var(--success);">${c.found_count}</td>
+                <td style="color:${c.missing_count > 0 ? 'var(--danger)' : 'var(--text)'};">${c.missing_count}</td>
+                <td><span class="badge ${Number(accuracy) === 100 ? 'badge-available' : 'badge-missing'}">${accuracy}%</span></td>
+                <td><button class="btn btn-outline btn-sm" onclick="viewCountDetail('${c.id}')">View</button></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  ` : `<div class="card">${emptyState('No counts recorded yet. Start a New Count to begin tracking.')}</div>`;
+}
+
+async function viewCountDetail(countId) {
+  const { data: count } = await db.from('physical_counts').select('*').eq('id', countId).single();
+  const { data: items } = await db.from('physical_count_items').select('*').eq('count_id', countId).order('status');
+
+  if (!count || !items) return toast('Count not found', 'error');
+
+  const found = items.filter(i => i.status === 'found');
+  const missing = items.filter(i => i.status === 'missing');
+  const accuracy = count.expected_count > 0 ? ((count.found_count / count.expected_count) * 100).toFixed(1) : '100.0';
+
+  const resolutionLabels = {
+    found_later: 'Found Later',
+    lost: 'Lost',
+    stolen: 'Stolen',
+    damaged: 'Damaged',
+    data_error: 'Data Entry Error'
+  };
+
+  openModal(`
+    <div class="modal-title">Count Detail — ${new Date(count.counted_at).toLocaleString()}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+      <div style="text-align:center;padding:10px;background:var(--sidebar-hover);border-radius:7px;">
+        <div style="font-size:11px;color:var(--text-muted);">Expected</div>
+        <div style="font-size:20px;font-weight:700;">${count.expected_count}</div>
+      </div>
+      <div style="text-align:center;padding:10px;background:var(--sidebar-hover);border-radius:7px;">
+        <div style="font-size:11px;color:var(--text-muted);">Found</div>
+        <div style="font-size:20px;font-weight:700;color:var(--success);">${count.found_count}</div>
+      </div>
+      <div style="text-align:center;padding:10px;background:var(--sidebar-hover);border-radius:7px;">
+        <div style="font-size:11px;color:var(--text-muted);">Missing</div>
+        <div style="font-size:20px;font-weight:700;color:var(--danger);">${count.missing_count}</div>
+      </div>
+      <div style="text-align:center;padding:10px;background:var(--sidebar-hover);border-radius:7px;">
+        <div style="font-size:11px;color:var(--text-muted);">Accuracy</div>
+        <div style="font-size:20px;font-weight:700;">${accuracy}%</div>
+      </div>
+    </div>
+    ${missing.length ? `
+      <div style="font-weight:600;font-size:14px;margin-bottom:8px;">Missing Phones</div>
+      <div class="table-wrap" style="max-height:300px;overflow-y:auto;">
+        <table>
+          <thead><tr><th>IMEI</th><th>Model</th><th>Resolution</th></tr></thead>
+          <tbody>
+            ${missing.map(m => `
+              <tr>
+                <td style="font-family:monospace;font-size:12px;">${m.imei}</td>
+                <td>${m.model}</td>
+                <td>${m.resolution ? `<span class="badge badge-${m.resolution === 'found_later' ? 'available' : 'sold'}">${resolutionLabels[m.resolution] || m.resolution}</span>` : '<span class="badge badge-missing">Unresolved</span>'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    ` : '<p style="color:var(--success);font-size:14px;">✅ No missing phones in this count</p>'}
+    <div style="margin-top:16px;">
+      <button class="btn btn-outline btn-sm" onclick="closeModal()">Close</button>
+    </div>
+  `);
+}
+
+// ─── LABELS ───
+async function renderLabels() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = loading();
+
+  const { data: phones } = await db.from('phones').select('*').eq('store_id', currentStore.id).eq('status', 'available').order('brand');
+  const list = phones || [];
+
+  main.innerHTML = `
+    <h2 style="margin-bottom:16px;">Print Labels</h2>
+    <div class="card" style="max-width:700px;">
+      <div class="search-bar">
+        <input type="text" id="labelSearch" placeholder="Search phones..." oninput="filterLabels()">
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:13px;display:flex;align-items:center;gap:6px;">
+          <input type="checkbox" id="selectAllLabels" onchange="toggleAllLabels()"> Select All
+        </label>
+      </div>
+      <div id="labelList">
+        ${list.map((p, i) => `
+          <div class="count-row" data-label-row>
+            <label style="display:flex;align-items:center;gap:10px;flex:1;cursor:pointer;">
+              <input type="checkbox" class="label-check" value="${i}">
+              <div class="count-info">
+                <div class="count-model">${p.brand} ${p.model} ${p.storage || ''} ${p.color || ''}</div>
+                <div class="count-imei">${p.imei} — ${fmt(p.retail_price)}</div>
+              </div>
+            </label>
+          </div>
+        `).join('')}
+      </div>
+      <button class="btn btn-primary btn-block" style="margin-top:16px;" onclick="printLabels()">Print Selected Labels</button>
+    </div>
+  `;
+
+  window._labelData = list;
+}
+
+function filterLabels() {
+  const q = document.getElementById('labelSearch').value.toLowerCase();
+  document.querySelectorAll('[data-label-row]').forEach((row, i) => {
+    const p = window._labelData[i];
+    const match = !q || p.imei.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q) || p.model.toLowerCase().includes(q);
+    row.style.display = match ? '' : 'none';
+  });
+}
+
+function toggleAllLabels() {
+  const checked = document.getElementById('selectAllLabels').checked;
+  document.querySelectorAll('.label-check').forEach(cb => cb.checked = checked);
+}
+
+function printLabels() {
+  const checked = Array.from(document.querySelectorAll('.label-check:checked'));
+  if (!checked.length) return toast('Select at least one phone', 'error');
+
+  const phones = checked.map(cb => window._labelData[cb.value]);
+  const printArea = document.getElementById('printArea');
+
+  printArea.innerHTML = phones.map(p => `
+    <div class="label-card">
+      <div class="label-model">${p.brand} ${p.model}</div>
+      <div class="label-specs">${p.storage || ''} ${p.color || ''} — ${p.condition || ''}</div>
+      <svg class="label-barcode" id="bc-${p.imei}"></svg>
+      <div class="label-price">${fmt(p.retail_price)}</div>
+    </div>
+  `).join('');
+
+  // Generate barcodes
+  setTimeout(() => {
+    phones.forEach(p => {
+      try { JsBarcode(`#bc-${p.imei}`, p.imei, { format: 'CODE128', width: 1.5, height: 40, fontSize: 12 }); } catch(e) {}
+    });
+    window.print();
+  }, 100);
+}
+
+// ─── STAFF MANAGEMENT ───
+async function renderStaffManagement() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = loading();
+
+  const { data: staffList } = await db.from('staff').select('*').order('name');
+  const { data: staffStores } = await db.from('staff_stores').select('*');
+
+  const list = staffList || [];
+  const assignments = staffStores || [];
+
+  main.innerHTML = `
+    <h2 style="margin-bottom:16px;">Staff Management</h2>
+    <div style="margin-bottom:16px;">
+      <button class="btn btn-primary" onclick="showAddStaffModal()">+ Add Staff Member</button>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>PIN</th><th>Assigned Stores</th><th>Created</th><th></th></tr></thead>
+          <tbody>
+            ${list.length ? list.map(s => {
+              const stores = assignments.filter(a => a.staff_id === s.id).map(a => allStores.find(st => st.id === a.store_id)?.name || '?');
+              return `<tr>
+                <td><strong>${s.name}</strong></td>
+                <td style="font-family:monospace;letter-spacing:2px;">${s.pin}</td>
+                <td>${stores.length ? stores.join(', ') : '<span style="color:var(--text-muted);">None</span>'}</td>
+                <td>${fmtDate(s.created_at)}</td>
+                <td>
+                  <div style="display:flex;gap:4px;">
+                    <button class="btn btn-outline btn-sm" onclick="editStaffMember('${s.id}')">Edit</button>
+                    ${s.pin !== ADMIN_PIN ? `<button class="btn btn-outline btn-sm" style="color:var(--danger);" onclick="deleteStaffMember('${s.id}','${s.name}')">Delete</button>` : ''}
+                  </div>
+                </td>
+              </tr>`;
+            }).join('') : `<tr><td colspan="5">${emptyState('No staff members yet. Add your first one.')}</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function showAddStaffModal() {
+  openModal(`
+    <div class="modal-title">Add Staff Member</div>
+    <div class="form-group">
+      <label>Name *</label>
+      <input type="text" id="staffName" placeholder="Full name">
+    </div>
+    <div class="form-group">
+      <label>4-Digit PIN *</label>
+      <input type="text" id="staffPin" maxlength="4" placeholder="e.g. 1234" style="font-family:monospace;letter-spacing:4px;font-size:18px;">
+      <small id="staffPinHint" style="font-size:12px;color:var(--text-muted);"></small>
+    </div>
+    <div class="form-group">
+      <label>Assigned Stores *</label>
+      <div id="staffStoreChecks" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+        ${allStores.map(s => `
+          <label style="font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="checkbox" class="staff-store-check" value="${s.id}"> ${s.name}
+          </label>
+        `).join('')}
+      </div>
+      <div style="margin-top:6px;">
+        <label style="font-size:12px;color:var(--primary);cursor:pointer;text-decoration:underline;" onclick="document.querySelectorAll('.staff-store-check').forEach(c=>c.checked=true)">Select all</label>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary btn-block" onclick="saveNewStaff()">Save</button>
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+    </div>
+  `);
+}
+
+async function saveNewStaff() {
+  const name = document.getElementById('staffName').value.trim();
+  const pin = document.getElementById('staffPin').value.trim();
+
+  if (!name) return toast('Enter a name', 'error');
+  if (!/^\d{4}$/.test(pin)) return toast('PIN must be exactly 4 digits', 'error');
+
+  // Check PIN uniqueness
+  const { data: existing } = await db.from('staff').select('id').eq('pin', pin);
+  if (existing && existing.length > 0) return toast('This PIN is already in use', 'error');
+
+  const storeIds = Array.from(document.querySelectorAll('.staff-store-check:checked')).map(c => c.value);
+  if (!storeIds.length) return toast('Select at least one store', 'error');
+
+  const { data: newStaff, error } = await db.from('staff').insert([{ name, pin }]).select().single();
+  if (error) return toast('Failed to add staff: ' + error.message, 'error');
+
+  // Assign stores
+  const storeAssignments = storeIds.map(sid => ({ staff_id: newStaff.id, store_id: sid }));
+  await db.from('staff_stores').insert(storeAssignments);
+
+  toast(`${name} added successfully!`);
+  closeModal();
+  renderStaffManagement();
+}
+
+async function editStaffMember(staffId) {
+  const { data: s } = await db.from('staff').select('*').eq('id', staffId).single();
+  if (!s) return;
+
+  const { data: assignments } = await db.from('staff_stores').select('store_id').eq('staff_id', staffId);
+  const assignedIds = (assignments || []).map(a => a.store_id);
+
+  openModal(`
+    <div class="modal-title">Edit Staff — ${s.name}</div>
+    <div class="form-group">
+      <label>Name *</label>
+      <input type="text" id="editStaffName" value="${s.name}">
+    </div>
+    <div class="form-group">
+      <label>4-Digit PIN *</label>
+      <input type="text" id="editStaffPin" maxlength="4" value="${s.pin}" style="font-family:monospace;letter-spacing:4px;font-size:18px;">
+    </div>
+    <div class="form-group">
+      <label>Assigned Stores *</label>
+      <div id="editStaffStoreChecks" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+        ${allStores.map(st => `
+          <label style="font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="checkbox" class="edit-staff-store-check" value="${st.id}" ${assignedIds.includes(st.id) ? 'checked' : ''}> ${st.name}
+          </label>
+        `).join('')}
+      </div>
+      <div style="margin-top:6px;">
+        <label style="font-size:12px;color:var(--primary);cursor:pointer;text-decoration:underline;" onclick="document.querySelectorAll('.edit-staff-store-check').forEach(c=>c.checked=true)">Select all</label>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary btn-block" onclick="updateStaff('${staffId}')">Save Changes</button>
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+    </div>
+  `);
+}
+
+async function updateStaff(staffId) {
+  const name = document.getElementById('editStaffName').value.trim();
+  const pin = document.getElementById('editStaffPin').value.trim();
+
+  if (!name) return toast('Enter a name', 'error');
+  if (!/^\d{4}$/.test(pin)) return toast('PIN must be exactly 4 digits', 'error');
+
+  // Check PIN uniqueness (excluding self)
+  const { data: existing } = await db.from('staff').select('id').eq('pin', pin).neq('id', staffId);
+  if (existing && existing.length > 0) return toast('This PIN is already in use by another staff member', 'error');
+
+  const storeIds = Array.from(document.querySelectorAll('.edit-staff-store-check:checked')).map(c => c.value);
+  if (!storeIds.length) return toast('Select at least one store', 'error');
+
+  const { error } = await db.from('staff').update({ name, pin }).eq('id', staffId);
+  if (error) return toast('Failed to update: ' + error.message, 'error');
+
+  // Re-assign stores: delete old, insert new
+  await db.from('staff_stores').delete().eq('staff_id', staffId);
+  const storeAssignments = storeIds.map(sid => ({ staff_id: staffId, store_id: sid }));
+  await db.from('staff_stores').insert(storeAssignments);
+
+  toast(`${name} updated!`);
+  closeModal();
+  renderStaffManagement();
+}
+
+async function deleteStaffMember(staffId, name) {
+  openModal(`
+    <div class="modal-title">Delete Staff Member</div>
+    <p style="margin-bottom:16px;">Are you sure you want to remove <strong>${name}</strong>? This cannot be undone.</p>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-danger btn-block" onclick="confirmDeleteStaff('${staffId}')">Delete</button>
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+    </div>
+  `);
+}
+
+async function confirmDeleteStaff(staffId) {
+  await db.from('staff_stores').delete().eq('staff_id', staffId);
+  const { error } = await db.from('staff').delete().eq('id', staffId);
+  if (error) return toast('Failed to delete: ' + error.message, 'error');
+
+  toast('Staff member removed');
+  closeModal();
+  renderStaffManagement();
+}
+
+// ─── INIT ON LOAD ───
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
